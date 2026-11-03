@@ -8,7 +8,7 @@ import org.springframework.data.rest.core.annotation.RestResource;
 
 import java.util.List;
 
-@RepositoryRestResource(path = "platformTests", collectionResourceRel = "platformTests")
+@RepositoryRestResource(path = "platformTests", collectionResourceRel = "platformTests", excerptProjection = FeaturedTestProjection.class)
 public interface PlatformTestRepository extends CrudRepository<PlatformTest, Long> {
     @RestResource(path = "featured", rel = "featured")
     @Query("SELECT t FROM PlatformTest t WHERE t.featured = true AND t.published = true AND t.publicVisible = true ORDER BY t.id ASC")

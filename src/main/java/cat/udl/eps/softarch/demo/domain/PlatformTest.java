@@ -6,6 +6,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -24,8 +25,9 @@ public class PlatformTest extends UriEntity<Long> {
     @NotBlank
     private String title;
 
-    @NotBlank
-    private String subject;
+    @NotNull
+    @ManyToOne(optional = false)
+    private Subject subject;
 
     @NotNull
     @Enumerated(EnumType.STRING)

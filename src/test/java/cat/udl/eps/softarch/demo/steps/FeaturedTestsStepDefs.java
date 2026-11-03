@@ -19,30 +19,46 @@ public class FeaturedTestsStepDefs {
         this.tests = tests;
     }
 
-    private void create(String title, String subject, String type, boolean published, boolean featured) {
+    private void create(String title, String subject, String type, boolean published, boolean featured, boolean publicVisible) {
         PlatformTest test = new PlatformTest();
         test.setTitle(title);
         test.setSubject(subject);
         test.setType(PlatformTest.Type.valueOf(type));
         test.setPublished(published);
         test.setFeatured(featured);
+        test.setPublicVisible(publicVisible);
         tests.save(test);
     }
 
     @Given("a published featured test {string} in subject {string} of type {string}")
     public void publishedFeatured(String title, String subject, String type) {
         tests.deleteAll();
-        create(title, subject, type, true, true);
+        create(title, subject, type, true, true, true);
     }
 
     @Given("an unpublished featured test {string} in subject {string} of type {string}")
     public void unpublishedFeatured(String title, String subject, String type) {
-        create(title, subject, type, false, true);
+        create(title, subject, type, false, true, true);
     }
 
     @Given("a published test {string} in subject {string} of type {string} that is not featured")
     public void publishedUnfeatured(String title, String subject, String type) {
-        create(title, subject, type, true, false);
+        create(title, subject, type, true, false, true);
+    }
+
+    @Given("a private published featured test {string} in subject {string} of type {string}")
+    public void privateFeatured(String title, String subject, String type) {
+        create(title, subject, type, true, true, false);
+    }
+
+    @Given("there are no tests")
+    public void noTests() {
+        tests.deleteAll();
+    }
+
+    @Then("the featured feed is empty")
+    public void checkEmptyFeed() throws Exception {
+        steps.result.andExpect(jsonPath("$._embedded.platformTests", hasSize(0)));
     }
 
     @When("a visitor requests featured tests")

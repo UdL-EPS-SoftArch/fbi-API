@@ -11,7 +11,7 @@ import java.util.List;
 @RepositoryRestResource(path = "platformTests", collectionResourceRel = "platformTests")
 public interface PlatformTestRepository extends CrudRepository<PlatformTest, Long> {
     @RestResource(path = "featured", rel = "featured")
-    @Query("SELECT t FROM PlatformTest t WHERE t.featured = true AND t.published = true ORDER BY t.id ASC")
+    @Query("SELECT t FROM PlatformTest t WHERE t.featured = true AND t.published = true AND t.publicVisible = true ORDER BY t.id ASC")
     List<PlatformTest> findFeatured();
 
     @Override

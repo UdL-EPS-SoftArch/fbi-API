@@ -32,5 +32,6 @@ public class PlatformTest extends UriEntity<Long> {
     private Type type;
 
     private boolean published;
+    private boolean publicVisible;
     private boolean featured;
 }

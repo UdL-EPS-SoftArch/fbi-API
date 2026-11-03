@@ -181,12 +181,6 @@ classDiagram
     BADGE "1" -- "0..*" USER_BADGE : awarded_as
 ```
 
-## Featured tests API (initial increment)
-
-`GET /platformTests/search/featured` is public and returns published tests marked as featured in a Spring Data REST collection. Each item includes its title, subject and type (`OFFICIAL` or `CUSTOM`). This feed is read-only through the API; selecting and managing tests is not implemented yet.
-
-The home page, leaderboard summary, and fallback to the most taken tests are not implemented. The fallback requires test-attempt data, which this project does not yet have. An empty feed currently returns an empty collection.
-
 ## AI-Assisted Spec-Driven Development (SDD)
 
 This repository serves as a starter template for **AI-Assisted Spec-Driven Development (SDD)** with **Spring Data REST** and **Cucumber BDD**.

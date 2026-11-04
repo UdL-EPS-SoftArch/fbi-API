@@ -44,6 +44,7 @@ public class Leaderboard extends UriEntity<Long> {
 
     private Integer score;
 
+    @Column(name = "rank_position")
     private Integer rank;
 
     @DateTimeFormat

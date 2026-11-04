@@ -62,6 +62,7 @@ public class Test extends UriEntity<Long> {
     private Integer year;
 
     @PositiveOrZero
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer maxScore = 0;
 
     @NotNull

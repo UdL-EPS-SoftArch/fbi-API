@@ -28,20 +28,30 @@ public class DBInitialization {
     @PostConstruct
     public void initializeDatabase() {
         // Default user
-        if (!userRepository.existsById("demo")) {
+        if (!userRepository.existsByUsername("demo")) {
             User user = new User();
             user.setEmail("demo@sample.app");
-            user.setId("demo");
+            user.setUsername("demo");
             user.setPassword(defaultPassword);
             user.encodePassword();
             userRepository.save(user);
         }
+        // Default administrator
+        if (!userRepository.existsByUsername("admin")) {
+            User admin = new User();
+            admin.setEmail("admin@sample.app");
+            admin.setUsername("admin");
+            admin.setPassword(defaultPassword);
+            admin.setRole(User.Role.ADMIN);
+            admin.encodePassword();
+            userRepository.save(admin);
+        }
         if (Arrays.asList(activeProfiles.split(",")).contains("test")) {
             // Testing instances
-            if (!userRepository.existsById("test")) {
+            if (!userRepository.existsByUsername("test")) {
                 User user = new User();
                 user.setEmail("test@sample.app");
-                user.setId("test");
+                user.setUsername("test");
                 user.setPassword(defaultPassword);
                 user.encodePassword();
                 user = userRepository.save(user);

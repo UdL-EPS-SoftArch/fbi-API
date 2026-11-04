@@ -10,24 +10,40 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collection;
 
 @Entity
 @Table(name = "DemoUser") //Avoid collision with system table User
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class User extends UriEntity<String> implements UserDetails {
+public class User extends UriEntity<Long> implements UserDetails {
+
+	public enum Role {
+		STUDENT, ADMIN
+	}
 
 	public static PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 	@Id
-	private String id;
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	@NotBlank
+	@Column(unique = true)
+	private String username;
 
 	@NotBlank
 	@Email
@@ -42,20 +58,35 @@ public class User extends UriEntity<String> implements UserDetails {
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private boolean passwordReset;
 
+	private String fullName;
+
+	@Enumerated(EnumType.STRING)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	private Role role = Role.STUDENT;
+
+	private String profilePicture;
+
+	private LocalDate birthDate;
+
+	@CreatedDate
+	@DateTimeFormat
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	private Instant createdAt;
+
+	@LastModifiedDate
+	@DateTimeFormat
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	private Instant updatedAt;
+
 	public void encodePassword() {
 		this.password = passwordEncoder.encode(this.password);
 	}
 
 	@Override
-	public String getUsername() { return id; }
-
-	public void setUsername(String username) { this.id = username; }
-
-	@Override
 	@JsonValue(value = false)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_USER");
+		return AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_" + role.name());
 	}
 
 	@Override

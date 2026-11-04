@@ -42,7 +42,7 @@ public class ManageRecordStepDefs {
     public void thereIsARecordWithNameOwnedBy(String name, String ownerUsername) {
         Record record = new Record();
         record.setName(name);
-        User owner = userRepository.findById(ownerUsername).orElseThrow();
+        User owner = userRepository.findByUsername(ownerUsername).orElseThrow();
         record.setOwnedBy(owner);
         record.setStatus(Record.Status.PRIVATE);
         recordRepository.save(record);
@@ -92,7 +92,7 @@ public class ManageRecordStepDefs {
 
     @Then("The list of records owned by {string} includes {int} named {string}")
     public void theListOfRecordsOwnedByIncludesNamed(String username, int count, String resourceName) throws Throwable {
-        User owner = userRepository.findById(username).orElseThrow();
+        User owner = userRepository.findByUsername(username).orElseThrow();
         stepDefs.result = stepDefs.mockMvc.perform(
                 get("/records/search/findByOwnedBy?user={userUri}", owner.getUri())
                     .accept(MediaType.APPLICATION_JSON)

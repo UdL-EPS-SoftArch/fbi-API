@@ -7,7 +7,7 @@
 
 The FBI API is the backend being developed for FBI, a platform that helps students, primarily at the University of Lleida, prepare for their subjects through tests. It supports practice and self-assessment, progress tracking, and friendly competition through reliable scores and leaderboards.
 
-The capabilities below describe the intended platform and are not necessarily implemented yet. For the role model, domain rules and detailed requirements, see [Platform Roles, Features and User Stories](docs/Context-FBI.md) and [User Stories](docs/User-Stories-FBI.md).
+The capabilities below describe the intended platform and are not necessarily implemented yet. For the role model, domain rules and detailed requirements, see [Platform Roles and Features](docs/Context-FBI.md) and [User Stories](docs/User-Stories-FBI.md).
 
 ## Vision
 

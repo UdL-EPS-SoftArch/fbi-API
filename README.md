@@ -1,32 +1,42 @@
-# Spring Boot Template
+# Test Platform API
 
-Template for a Spring Boot project including Spring REST, HATEOAS, JPA, etc. Additional details: [HELP.md](HELP.md)
+The Test Platform API is the backend being developed for a platform that helps students, primarily at the University of Lleida, prepare for their subjects through tests. It supports practice and self-assessment, progress tracking, and friendly competition through reliable scores and leaderboards.
 
-[![Open Issues](https://img.shields.io/github/issues-raw/UdL-EPS-SoftArch/spring-template?logo=github)](https://github.com/orgs/UdL-EPS-SoftArch/projects/12)
-[![CI/CD](https://github.com/UdL-EPS-SoftArch/spring-template/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/UdL-EPS-SoftArch/spring-template/actions)
-[![Cucumber Reports](https://img.shields.io/badge/cucumber-reports-brightgreen)](https://UdL-EPS-SoftArch.github.io/spring-template/reports/cucumber-report.html)
-[![Deployment status](https://img.shields.io/uptimerobot/status/m792691238-18db2a43adf8d8ded474f885)](https://spring-template.fly.dev/records)
+The capabilities below describe the intended platform and are not necessarily implemented yet. For the role model, domain rules and detailed requirements, see [Platform Roles, Features and User Stories](docs/Context-FBI.md) and [User Stories](docs/User-Stories-FBI.md).
 
 ## Vision
 
-**For** students learning Spring Boot and REST API development
-**who** want to practice backend engineering with modern tools
-**the project** is a template project
-**that** provides user registration, authentication, and secured record management with ownership-based access control
-**Unlike** other templates, this one is designed for iterative feature building with BDD (Cucumber) tests driving the development
+Give students an accessible way to explore subject material, practice with official and custom tests, review their results and measure their progress. The platform also aims to maintain fair competition and trustworthy content through automatic grading, privacy protections and administrative moderation.
+
+Official test attempts can contribute to subject and global leaderboards using each student's personal best per eligible test. Custom tests are for practice and do not contribute to competitive rankings. Recorded results remain fixed when scoring criteria change.
 
 ## Features per Stakeholder
 
-| USER                          | ADMIN                |
-|-------------------------------|----------------------|
-| Register                      |                      |
-| Login                         |                      |
-| Create Record                 |                      |
-| Retrieve Record               |                      |
-| Update Record                 |                      |
-| Delete Record                 |                      |
+The roles are hierarchical: students can use public visitor features, and administrators can also use student features, subject to competitive restrictions.
+
+### Visitor
+
+- Browse subjects and published public tests, search or filter the catalog, and view public test details.
+- View featured tests, public profiles, and subject and global leaderboards.
+- Register, log in, and recover a forgotten password.
+
+### Student
+
+- Take official and custom tests, review scores, correct answers and mistakes, and view test history.
+- Participate in subject and global leaderboards through eligible official test attempts.
+- Create, publish and manage custom practice tests.
+- Earn badges, manage profile information, and report content or platform problems.
+
+### Administrator
+
+- Manage subjects and create, edit, publish, withdraw and validate official tests, questions and answer options.
+- Moderate student-created content, review reports and resolve issues.
+- Monitor statistics and manage leaderboards for justified administrative reasons.
+- Use student features for validation and practice; administrator attempts do not count toward leaderboards and administrators cannot earn student badges.
 
 ## Entities Model
+
+The following diagram describes the project domain model; it is not a statement that all entities and features are implemented. See the project documentation for detailed rules and proposed implementation conventions.
 
 ```mermaid
 classDiagram
@@ -183,7 +193,7 @@ classDiagram
 
 ## AI-Assisted Spec-Driven Development (SDD)
 
-This repository serves as a starter template for **AI-Assisted Spec-Driven Development (SDD)** with **Spring Data REST** and **Cucumber BDD**.
+The API is developed using **AI-Assisted Spec-Driven Development (SDD)** with **Spring Data REST** and **Cucumber BDD**.
 
 It is pre-configured with agent skills (`skills/`), repository instructions (`AGENTS.md`, `CONVENTIONS.md`), and Aider configuration (`.aider.conf.yml`) to support both:
 1. **Full-Capability AI Agents** (OpenCode, Claude Code, Cursor, GitHub Copilot, Windsurf).
@@ -195,5 +205,5 @@ For complete stage-by-stage instructions and command workflows, see **[AI_DEVELO
 - **`skills/sdd-feature-designer/SKILL.md`**: Draft Cucumber `.feature` specs for Spring Data REST endpoints (<50 lines).
 - **`skills/sdd-cucumber-steps/SKILL.md`**: Implement MockMvc step definition classes extending `StepDefs.java`.
 - **`skills/spring-datarest-entity/SKILL.md`**: Create JPA `@Entity` classes extending `UriEntity` and `@RepositoryRestResource` interfaces with SpEL row-level security queries.
-- **`skills/spring-datarest-hander/SKILL.md`**: Create lifecycle event handlers based on the `@RepositoryEventHandler`.
+- **`skills/spring-datarest-handler/SKILL.md`**: Create lifecycle event handlers based on the `@RepositoryEventHandler`.
 - **`skills/sdd-bdd-verifier/SKILL.md`**: Run `mvn test -Dtest=CucumberTest` and analyze test failure summaries.

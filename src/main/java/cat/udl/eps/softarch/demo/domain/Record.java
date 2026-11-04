@@ -39,11 +39,13 @@ public class Record extends UriEntity<Long> {
     private Status status = Status.PRIVATE;
 
     @CreatedDate
+    @Column(name = "created_utc")
     @DateTimeFormat
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Instant created;
 
     @LastModifiedDate
+    @Column(name = "modified_utc")
     @DateTimeFormat
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Instant modified;

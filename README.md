@@ -37,16 +37,16 @@ classDiagram
         +string username UK
         +string full_name
         +string role
-        +datetime created_at
-        +datetime updated_at
+        +datetime created_at_utc
+        +datetime updated_at_utc
     }
 
     class SUBJECT {
         +int subject_id PK
         +string name
         +string description
-        +datetime created_at
-        +datetime updated_at
+        +datetime created_at_utc
+        +datetime updated_at_utc
     }
 
     class TEST {
@@ -62,9 +62,9 @@ classDiagram
         +int max_score
         +string tags
         +boolean is_public
-        +datetime published_at
-        +datetime created_at
-        +datetime updated_at
+        +datetime published_at_utc
+        +datetime created_at_utc
+        +datetime updated_at_utc
     }
 
     class QUESTION {
@@ -74,8 +74,8 @@ classDiagram
         +string question_type
         +int order_index
         +int score
-        +datetime created_at
-        +datetime updated_at
+        +datetime created_at_utc
+        +datetime updated_at_utc
     }
 
     class ANSWER_OPTION {
@@ -97,8 +97,8 @@ classDiagram
         +int incorrect_count
         +int unanswered_count
         +boolean counts_for_leaderboard
-        +datetime started_at
-        +datetime submitted_at
+        +datetime started_at_utc
+        +datetime submitted_at_utc
     }
 
     class ANSWER_ATTEMPT {
@@ -108,7 +108,7 @@ classDiagram
         +int selected_option_id FK
         +boolean is_correct
         +decimal awarded_score
-        +datetime answered_at
+        +datetime answered_at_utc
     }
 
     class LEADERBOARD {
@@ -119,7 +119,7 @@ classDiagram
         +string leaderboard_type
         +int score
         +int rank
-        +datetime calculated_at
+        +datetime calculated_at_utc
     }
 
     class BADGE {
@@ -130,14 +130,14 @@ classDiagram
         +string requirement_type
         +int requirement_value
         +boolean is_active
-        +datetime created_at
+        +datetime created_at_utc
     }
 
     class USER_BADGE {
         +int user_badge_id PK
         +int user_id FK
         +int badge_id FK
-        +datetime earned_at
+        +datetime earned_at_utc
         +boolean is_visible
     }
 
@@ -150,8 +150,8 @@ classDiagram
         +text description
         +string status
         +int resolved_by FK
-        +datetime created_at
-        +datetime resolved_at
+        +datetime created_at_utc
+        +datetime resolved_at_utc
     }
 
     USER "1" -- "0..*" TEST : authors

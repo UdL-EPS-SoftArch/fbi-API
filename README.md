@@ -1,12 +1,12 @@
-# Test Platform API
+# FBI API
 
-The Test Platform API is the backend being developed for a platform that helps students, primarily at the University of Lleida, prepare for their subjects through tests. It supports practice and self-assessment, progress tracking, and friendly competition through reliable scores and leaderboards.
+The FBI API is the backend being developed for FBI, a platform that helps students, primarily at the University of Lleida, prepare for their subjects through tests. It supports practice and self-assessment, progress tracking, and friendly competition through reliable scores and leaderboards.
 
 The capabilities below describe the intended platform and are not necessarily implemented yet. For the role model, domain rules and detailed requirements, see [Platform Roles, Features and User Stories](docs/Context-FBI.md) and [User Stories](docs/User-Stories-FBI.md).
 
 ## Vision
 
-Give students an accessible way to explore subject material, practice with official and custom tests, review their results and measure their progress. The platform also aims to maintain fair competition and trustworthy content through automatic grading, privacy protections and administrative moderation.
+FBI aims to give students an accessible way to explore subject material, practice with official and custom tests, review their results and measure their progress. The platform also aims to maintain fair competition and trustworthy content through automatic grading, privacy protections and administrative moderation.
 
 Official test attempts can contribute to subject and global leaderboards using each student's personal best per eligible test. Custom tests are for practice and do not contribute to competitive rankings. Recorded results remain fixed when scoring criteria change.
 

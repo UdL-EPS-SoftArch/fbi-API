@@ -1,5 +1,10 @@
 # FBI API
 
+[![Open Issues](https://img.shields.io/github/issues-raw/UdL-EPS-SoftArch/fbi-API?logo=github)](https://github.com/UdL-EPS-SoftArch/fbi-API/issues)
+[![CI/CD](https://github.com/UdL-EPS-SoftArch/fbi-API/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/UdL-EPS-SoftArch/fbi-API/actions/workflows/ci-cd.yml)
+[![Cucumber Reports](https://img.shields.io/badge/cucumber-reports-brightgreen)](https://udl-eps-softarch.github.io/fbi-API/reports/cucumber-report.html)
+[![Deployments](https://img.shields.io/badge/github-deployments-blue?logo=github)](https://github.com/UdL-EPS-SoftArch/fbi-API/deployments)
+
 The FBI API is the backend being developed for FBI, a platform that helps students, primarily at the University of Lleida, prepare for their subjects through tests. It supports practice and self-assessment, progress tracking, and friendly competition through reliable scores and leaderboards.
 
 The capabilities below describe the intended platform and are not necessarily implemented yet. For the role model, domain rules and detailed requirements, see [Platform Roles, Features and User Stories](docs/Context-FBI.md) and [User Stories](docs/User-Stories-FBI.md).

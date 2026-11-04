@@ -19,25 +19,12 @@ Official test attempts can contribute to subject and global leaderboards using e
 
 The roles are hierarchical: students can use public visitor features, and administrators can also use student features, subject to competitive restrictions.
 
-### Visitor
-
-- Browse subjects and published public tests, search or filter the catalog, and view public test details.
-- View featured tests, public profiles, and subject and global leaderboards.
-- Register, log in, and recover a forgotten password.
-
-### Student
-
-- Take official and custom tests, review scores, correct answers and mistakes, and view test history.
-- Participate in subject and global leaderboards through eligible official test attempts.
-- Create, publish and manage custom practice tests.
-- Earn badges, manage profile information, and report content or platform problems.
-
-### Administrator
-
-- Manage subjects and create, edit, publish, withdraw and validate official tests, questions and answer options.
-- Moderate student-created content, review reports and resolve issues.
-- Monitor statistics and manage leaderboards for justified administrative reasons.
-- Use student features for validation and practice; administrator attempts do not count toward leaderboards and administrators cannot earn student badges.
+| Visitor | Student | Administrator |
+| --- | --- | --- |
+| Browse subjects and published public tests; search or filter the catalog and view public test details | Take official and custom tests; review scores, correct answers, mistakes and test history | Manage subjects and create, edit, publish, withdraw and validate official tests, questions and answer options |
+| View featured tests, public profiles, and subject and global leaderboards | Participate in subject and global leaderboards through eligible official test attempts | Moderate student-created content, review reports and resolve issues |
+| Register, log in and recover a forgotten password | Create, publish and manage custom practice tests | Monitor statistics and manage leaderboards for justified administrative reasons |
+| | Earn badges, manage profile information, and report content or platform problems | Use student features for validation and practice; administrator attempts do not count toward leaderboards and administrators cannot earn student badges |
 
 ## Entities Model
 

@@ -10,6 +10,9 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+import org.springframework.data.rest.core.annotation.RestResource;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,4 +43,21 @@ public interface TestRepository extends CrudRepository<Test, Long>, PagingAndSor
     Page<Test> findByTitleContaining(@Param("text") String text, Pageable pageable);
 
     List<Test> findByTitle(String title);
+
+    /** Values as stored in the database (never the entity merged with the request body). */
+    interface TestSnapshot {
+        String getAuthorUsername();
+
+        Test.Status getStatus();
+
+        Test.TestType getTestType();
+    }
+
+    // REQUIRES_NEW: runs in its own session, so it always sees the committed row and never the
+    // entity that Spring Data REST has already merged with the JSON of the current request.
+    @RestResource(exported = false)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    @Query("SELECT u.username AS authorUsername, t.status AS status, t.testType AS testType " +
+           "FROM Test t LEFT JOIN t.author u WHERE t.id = :id")
+    Optional<TestSnapshot> findSnapshotById(@Param("id") Long id);
 }

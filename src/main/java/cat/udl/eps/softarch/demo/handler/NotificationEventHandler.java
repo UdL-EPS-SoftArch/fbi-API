@@ -5,8 +5,9 @@ import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.NotificationRepository;
 import org.springframework.data.rest.core.annotation.*;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+
+import java.util.Objects;
 
 @Component
 @RepositoryEventHandler
@@ -19,26 +20,37 @@ public class NotificationEventHandler {
 
     @HandleBeforeCreate
     public void handleNotificationPreCreate(Notification notification) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (user.getRole() != User.Role.ADMIN) {
+        if (!CurrentUser.isAdmin(CurrentUser.get())) {
             throw new AccessDeniedException("Only administrators can send notifications");
         }
     }
 
     @HandleBeforeSave
     public void handleNotificationPreSave(Notification notification) {
-        checkRecipientOrAdmin(notification);
+        User user = CurrentUser.get();
+
+        // The incoming entity is already merged with the request body: compare with the stored row
+        NotificationRepository.NotificationSnapshot stored = notificationRepository.findSnapshotById(notification.getId())
+                .orElseThrow(() -> new AccessDeniedException("Notification not found"));
+
+        if (CurrentUser.isAdmin(user)) {
+            return;
+        }
+        if (!user.getUsername().equals(stored.getRecipientUsername())) {
+            throw new AccessDeniedException("Only the recipient can modify the notification");
+        }
+        // The recipient can only mark it as seen: not reassign it nor rewrite the message
+        if (!stored.getRecipientUsername().equals(CurrentUser.usernameOf(notification.getRecipient()))
+                || !Objects.equals(stored.getMessage(), notification.getMessage())) {
+            throw new AccessDeniedException("Only the seen flag of a notification can be changed");
+        }
     }
 
     @HandleBeforeDelete
     public void handleNotificationPreDelete(Notification notification) {
-        checkRecipientOrAdmin(notification);
-    }
-
-    private void checkRecipientOrAdmin(Notification notification) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (user.getRole() != User.Role.ADMIN
-                && !user.getUsername().equals(notification.getRecipient().getUsername())) {
+        User user = CurrentUser.get();
+        if (!CurrentUser.isAdmin(user)
+                && !user.getUsername().equals(CurrentUser.usernameOf(notification.getRecipient()))) {
             throw new AccessDeniedException("Only the recipient can modify the notification");
         }
     }

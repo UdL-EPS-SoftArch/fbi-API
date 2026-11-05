@@ -5,12 +5,10 @@ import cat.udl.eps.softarch.demo.domain.UserBadge;
 import cat.udl.eps.softarch.demo.repository.UserBadgeRepository;
 import org.springframework.data.rest.core.annotation.*;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-
-// Badges are awarded by the server; through the API, users can only show or hide their own
+// Badges are awarded only by the server (BadgeService). Through the API the owner can only
+// show or hide an earned badge; nobody, administrators included, can create or reassign one.
 @Component
 @RepositoryEventHandler
 public class UserBadgeEventHandler {
@@ -22,26 +20,32 @@ public class UserBadgeEventHandler {
 
     @HandleBeforeCreate
     public void handleUserBadgePreCreate(UserBadge userBadge) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (user.getRole() != User.Role.ADMIN) {
-            throw new AccessDeniedException("Badges cannot be self-assigned");
-        }
-        userBadge.setEarnedAt(Instant.now());
+        throw new AccessDeniedException("Badges are awarded automatically by the server");
     }
 
     @HandleBeforeSave
     public void handleUserBadgePreSave(UserBadge userBadge) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (user.getRole() != User.Role.ADMIN
-                && !user.getUsername().equals(userBadge.getUser().getUsername())) {
+        User user = CurrentUser.get();
+
+        // The incoming entity is already merged with the request body: compare with the stored row
+        UserBadgeRepository.UserBadgeSnapshot stored = userBadgeRepository.findSnapshotById(userBadge.getId())
+                .orElseThrow(() -> new AccessDeniedException("Badge not found"));
+
+        if (!user.getUsername().equals(stored.getOwnerUsername())) {
             throw new AccessDeniedException("Only the owner can change the badge visibility");
+        }
+        // Only isVisible may change: neither the user nor the badge can be rewritten
+        if (!stored.getOwnerUsername().equals(CurrentUser.usernameOf(userBadge.getUser()))
+                || userBadge.getBadge() == null
+                || !stored.getBadgeId().equals(userBadge.getBadge().getId())) {
+            throw new AccessDeniedException("Only the visibility of an earned badge can be changed");
         }
     }
 
     @HandleBeforeDelete
     public void handleUserBadgePreDelete(UserBadge userBadge) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (user.getRole() != User.Role.ADMIN) {
+        User user = CurrentUser.get();
+        if (!CurrentUser.isAdmin(user)) {
             throw new AccessDeniedException("Only administrators can remove earned badges");
         }
     }

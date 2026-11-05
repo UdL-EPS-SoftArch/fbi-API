@@ -9,6 +9,9 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+import org.springframework.data.rest.core.annotation.RestResource;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -32,4 +35,17 @@ public interface NotificationRepository extends CrudRepository<Notification, Lon
 
     @Query("SELECT n FROM Notification n WHERE n.recipient = :user AND n.seen = false AND (" + OWNERSHIP_CLAUSE + ")")
     Page<Notification> findUnseenByRecipient(@Param("user") User recipient, Pageable pageable);
+
+    /** Values as stored in the database (never the entity merged with the request body). */
+    interface NotificationSnapshot {
+        String getRecipientUsername();
+
+        String getMessage();
+    }
+
+    @RestResource(exported = false)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    @Query("SELECT r.username AS recipientUsername, n.message AS message " +
+           "FROM Notification n LEFT JOIN n.recipient r WHERE n.id = :id")
+    Optional<NotificationSnapshot> findSnapshotById(@Param("id") Long id);
 }

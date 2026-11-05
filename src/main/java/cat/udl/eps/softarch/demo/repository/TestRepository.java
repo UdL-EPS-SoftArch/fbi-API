@@ -42,6 +42,8 @@ public interface TestRepository extends CrudRepository<Test, Long>, PagingAndSor
     @Query("SELECT t FROM Test t WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :text, '%')) AND (" + VISIBILITY_CLAUSE + ")")
     Page<Test> findByTitleContaining(@Param("text") String text, Pageable pageable);
 
+    // Not filtered by visibility: internal use only (the public search is findByTitleContaining)
+    @RestResource(exported = false)
     List<Test> findByTitle(String title);
 
     /** Values as stored in the database (never the entity merged with the request body). */

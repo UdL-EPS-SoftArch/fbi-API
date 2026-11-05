@@ -81,7 +81,8 @@ public class RegisterStepDefs {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(new JSONObject(
                             stepDefs.mapper.writeValueAsString(user)
-                    ).put("password", password).toString())
+                    // Private profile fields are not serialized outside an owner/admin request
+                    ).put("email", email).put("password", password).toString())
                     .characterEncoding(StandardCharsets.UTF_8)
                     .accept(MediaType.APPLICATION_JSON)
                     .with(AuthenticationStepDefs.authenticate()))

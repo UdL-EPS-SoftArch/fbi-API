@@ -101,6 +101,14 @@ public class TestAttemptEventHandler {
         badgeService.evaluate(attempt.getUser());
     }
 
+    // Attempts are the history behind scores, rankings and badges (2.4.5): they are never
+    // physically deleted, administrators included. An unfinished attempt can be ABANDONED instead.
+    @HandleBeforeDelete
+    public void handleTestAttemptPreDelete(TestAttempt attempt) {
+        CurrentUser.get();
+        throw new AccessDeniedException("Test attempts cannot be deleted");
+    }
+
     private void checkAvailable(Test test, User user) {
         boolean isAuthor = user.getUsername().equals(CurrentUser.usernameOf(test.getAuthor()));
         boolean available = test.getStatus() == Test.Status.PUBLISHED

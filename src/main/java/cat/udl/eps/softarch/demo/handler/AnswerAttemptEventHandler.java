@@ -60,6 +60,19 @@ public class AnswerAttemptEventHandler {
         answer.setAnsweredAt(Instant.now());
     }
 
+    // An answer can only be cleared by its owner while the attempt is in progress:
+    // the answers of a submitted attempt are part of an immutable result (2.4.3)
+    @HandleBeforeDelete
+    public void handleAnswerAttemptPreDelete(AnswerAttempt answer) {
+        User user = CurrentUser.get();
+        AnswerAttemptRepository.AnswerSnapshot stored = answerAttemptRepository.findSnapshotById(answer.getId())
+                .orElseThrow(() -> new AccessDeniedException("Answer not found"));
+        if (!user.getUsername().equals(stored.getOwnerUsername())) {
+            throw new AccessDeniedException("Only the user taking the test can delete its answers");
+        }
+        requireInProgress(stored.getAttemptStatus());
+    }
+
     private void requireInProgress(TestAttempt.Status status) {
         if (status != TestAttempt.Status.IN_PROGRESS) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "The attempt is already finished");

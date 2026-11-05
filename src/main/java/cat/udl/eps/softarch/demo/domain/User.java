@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import tools.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.Length;
@@ -45,9 +46,11 @@ public class User extends UriEntity<Long> implements UserDetails {
 	@Column(unique = true)
 	private String username;
 
+	// Private profile fields: only the owner and administrators can read them (2.4.7)
 	@NotBlank
 	@Email
 	@Column(unique = true)
+	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
 	private String email;
 
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -58,14 +61,18 @@ public class User extends UriEntity<Long> implements UserDetails {
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private boolean passwordReset;
 
+	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
 	private String fullName;
 
+	// Hidden from other users so that administrator accounts are not publicly discoverable
 	@Enumerated(EnumType.STRING)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
 	private Role role = Role.STUDENT;
 
 	private String profilePicture;
 
+	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
 	private LocalDate birthDate;
 
 	@CreatedDate
@@ -85,6 +92,7 @@ public class User extends UriEntity<Long> implements UserDetails {
 	@Override
 	@JsonValue(value = false)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		return AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_" + role.name());
 	}

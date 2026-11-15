@@ -6,8 +6,10 @@ import cat.udl.eps.softarch.demo.repository.SubjectRepository;
 import cat.udl.eps.softarch.demo.repository.TestRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.core.annotation.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 @Component
 @RepositoryEventHandler
@@ -48,7 +50,8 @@ public class SubjectEventHandler {
     public void handleSubjectPreDelete(Subject subject) {
         checkAdmin();
         if (testRepository.existsBySubject(subject) || leaderboardRepository.existsBySubject(subject)) {
-            throw new DataIntegrityViolationException("The subject has tests or results, archive it instead");
+            // ResponseStatusException keeps the message (Spring Data REST hides the one of DataIntegrityViolationException)
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "The subject has tests or results, archive it instead");
         }
     }
 

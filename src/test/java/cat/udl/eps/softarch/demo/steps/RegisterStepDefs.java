@@ -29,15 +29,15 @@ public class RegisterStepDefs {
 
   @Given("^There is no registered user with username \"([^\"]*)\"$")
   public void thereIsNoRegisteredUserWithUsername(String user) {
-    assertFalse(userRepository.existsById(user), "User \"" + user + "\"shouldn't exist");
+    assertFalse(userRepository.existsByUsername(user), "User \"" + user + "\"shouldn't exist");
   }
 
   @Given("^There is a registered user with username \"([^\"]*)\" and password \"([^\"]*)\" and email \"([^\"]*)\"$")
   public void thereIsARegisteredUserWithUsernameAndPasswordAndEmail(String username, String password, String email) {
-    if (!userRepository.existsById(username)) {
+    if (!userRepository.existsByUsername(username)) {
       User user = new User();
       user.setEmail(email);
-      user.setId(username);
+      user.setUsername(username);
       user.setPassword(password);
       user.encodePassword();
       userRepository.save(user);
@@ -73,7 +73,7 @@ public class RegisterStepDefs {
   @When("^I register a new user with username \"([^\"]*)\", email \"([^\"]*)\" and password \"([^\"]*)\"$")
   public void iRegisterANewUserWithUsernameEmailAndPassword(String username, String email, String password) throws Throwable {
     User user = new User();
-    user.setId(username);
+    user.setUsername(username);
     user.setEmail(email);
 
     stepDefs.result = stepDefs.mockMvc.perform(
@@ -81,7 +81,8 @@ public class RegisterStepDefs {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(new JSONObject(
                             stepDefs.mapper.writeValueAsString(user)
-                    ).put("password", password).toString())
+                    // Private profile fields are not serialized outside an owner/admin request
+                    ).put("email", email).put("password", password).toString())
                     .characterEncoding(StandardCharsets.UTF_8)
                     .accept(MediaType.APPLICATION_JSON)
                     .with(AuthenticationStepDefs.authenticate()))
@@ -90,21 +91,19 @@ public class RegisterStepDefs {
 
   @And("^It has been created a user with username \"([^\"]*)\" and email \"([^\"]*)\", the password is not returned$")
   public void itHasBeenCreatedAUserWithUsername(String username, String email) throws Throwable {
+    User user = userRepository.findByUsername(username).orElseThrow();
     stepDefs.result = stepDefs.mockMvc.perform(
-            get("/users/{username}", username)
+            get(user.getUri())
                     .accept(MediaType.APPLICATION_JSON)
                     .with(AuthenticationStepDefs.authenticate()))
             .andDo(print())
+            .andExpect(jsonPath("$.username", is(username)))
             .andExpect(jsonPath("$.email", is(email)))
             .andExpect(jsonPath("$.password").doesNotExist());
   }
 
   @And("^It has not been created a user with username \"([^\"]*)\"$")
-  public void itHasNotBeenCreatedAUserWithUsername(String username) throws Throwable {
-    stepDefs.result = stepDefs.mockMvc.perform(
-            get("/users/{username}", username)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .with(AuthenticationStepDefs.authenticate()))
-            .andExpect(status().isNotFound());
+  public void itHasNotBeenCreatedAUserWithUsername(String username) {
+    assertFalse(userRepository.existsByUsername(username), "User \"" + username + "\" shouldn't exist");
   }
 }

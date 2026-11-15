@@ -33,7 +33,7 @@ public class Subject extends UriEntity<Long> {
     private String description;
 
     // Writable so an administrator can archive (false) or restore (true) the subject; only admins can save subjects (see SubjectEventHandler)
-    private boolean active = true;
+    private boolean active = false;
     @Formula("(select count(*) from test t where t.subject_id = id and t.status = 'PUBLISHED' and t.is_public = true)")
     private long publishedTestCount;
 

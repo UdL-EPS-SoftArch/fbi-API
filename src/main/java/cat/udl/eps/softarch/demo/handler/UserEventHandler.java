@@ -13,8 +13,10 @@ import org.springframework.data.rest.core.annotation.HandleBeforeDelete;
 import org.springframework.data.rest.core.annotation.HandleBeforeLinkSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeSave;
 import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 @Component
 @RepositoryEventHandler
@@ -31,6 +33,21 @@ public class UserEventHandler {
     @HandleBeforeCreate
     public void handleUserPreCreate(User user) {
         logger.info("Before creating: {}", user.toString());
+        if (!Boolean.TRUE.equals(user.getAcceptTerms())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The Terms of Use and Privacy Policy must be accepted");
+        }
+        // Clear 409s instead of raw database constraint violations
+        if (user.getUsername() != null && userRepository.existsByUsername(user.getUsername())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This public name is already taken, please choose another one");
+        }
+        if (user.getEmail() != null && userRepository.existsByEmail(user.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This email cannot be used, try logging in or recovering your password");
+        }
+        // Registration always creates students; the role cannot be chosen by the client
+        user.setRole(User.Role.STUDENT);
     }
 
     @HandleBeforeSave

@@ -8,6 +8,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+import org.springframework.data.rest.core.annotation.RestResource;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +32,11 @@ public interface UserRepository extends CrudRepository<User, Long>, PagingAndSor
   Optional<User> findByUsername(@Param("username") String username);
 
   boolean existsByUsername(@Param("username") String username);
+
+  // Internal use (registration duplicate check): not exported so that the API
+  // does not reveal which emails are registered
+  @RestResource(exported = false)
+  boolean existsByEmail(String email);
 
   @Query("SELECT u FROM User u WHERE u.username LIKE CONCAT('%', :text, '%') AND (" + DISCOVERABLE_CLAUSE + ")")
   List<User> findByUsernameContaining(@Param("text") String text);

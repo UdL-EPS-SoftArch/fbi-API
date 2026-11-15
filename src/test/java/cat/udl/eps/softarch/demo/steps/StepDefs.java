@@ -27,7 +27,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 @ContextConfiguration(
-	classes = {DemoApplication.class},
+	classes = {DemoApplication.class, RecoveryTestConfiguration.class},
 	loader = SpringBootContextLoader.class
 )
 @DirtiesContext

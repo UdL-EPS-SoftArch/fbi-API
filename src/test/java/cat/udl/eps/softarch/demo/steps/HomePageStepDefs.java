@@ -1,8 +1,8 @@
 package cat.udl.eps.softarch.demo.steps;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -148,14 +148,14 @@ public class HomePageStepDefs {
         JsonNode entries = responseBody().path("_embedded").path("tests");
         JsonNode entry = null;
         for (JsonNode candidate : entries) {
-            if (title.equals(candidate.path("title").asText())) {
+            if (title.equals(candidate.path("title").asString())) {
                 entry = candidate;
                 break;
             }
         }
         assertNotNull(entry, "Test missing from collection: " + title);
-        assertEquals("Home test description", entry.path("description").asText());
-        assertEquals("PUBLISHED", entry.path("status").asText());
+        assertEquals("Home test description", entry.path("description").asString());
+        assertEquals("PUBLISHED", entry.path("status").asString());
         assertTrue(entry.has("createdAt"));
     }
 
@@ -163,7 +163,7 @@ public class HomePageStepDefs {
     public void checkStandardLeaderboardFields() throws Exception {
         JsonNode entries = responseBody().path("_embedded").path("leaderboards");
         assertEquals(1, entries.size());
-        assertEquals("GLOBAL", entries.get(0).path("leaderboardType").asText());
+        assertEquals("GLOBAL", entries.get(0).path("leaderboardType").asString());
         assertTrue(entries.get(0).hasNonNull("calculatedAt"));
     }
 
@@ -176,7 +176,7 @@ public class HomePageStepDefs {
 
     @Then("the home response links to {string} at {string}")
     public void checkHomeLink(String relation, String target) throws Exception {
-        String href = responseBody().path("_links").path(relation).path("href").asText();
+        String href = responseBody().path("_links").path(relation).path("href").asString();
         URI actual = UriTemplate.of(href).expand(Map.of());
         URI expected = URI.create(target);
         assertEquals(expected.getPath(), actual.getPath(), relation + " link path");

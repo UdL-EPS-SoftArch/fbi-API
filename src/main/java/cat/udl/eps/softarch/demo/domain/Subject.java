@@ -31,7 +31,7 @@ public class Subject extends UriEntity<Long> {
     @Column(length = 500)
     private String description;
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    // Writable so an administrator can archive (false) or restore (true) the subject; only admins can save subjects (see SubjectEventHandler)
     private boolean active = true;
 
     @CreatedDate

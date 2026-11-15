@@ -31,6 +31,7 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/users").authenticated()
                 .requestMatchers(HttpMethod.POST, "/users").anonymous()
                 .requestMatchers(HttpMethod.POST, "/users/*").denyAll()
+                .requestMatchers(HttpMethod.GET, "/featuredTests", "/leaderboardSummary").permitAll()
                 .requestMatchers(HttpMethod.GET, "/subjects/*", "/tests/*", "/badges/*", "/leaderboards/*").permitAll() // Public area for visitors
                 .requestMatchers(HttpMethod.GET, "/*/*").authenticated()
                 .requestMatchers(HttpMethod.POST, "/*/*").authenticated()

@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.Length;
+import org.hibernate.annotations.Formula;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -32,6 +33,10 @@ public class Subject extends UriEntity<Long> {
     private String description;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Boolean archived = false;
+
+    @Formula("(select count(*) from test t where t.subject_id = id and t.status = 'PUBLISHED' and t.is_public = true)")
+    private long publishedTestCount;
     private boolean active = true;
 
     @CreatedDate

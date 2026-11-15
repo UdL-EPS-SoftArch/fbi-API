@@ -31,6 +31,9 @@ public class Subject extends UriEntity<Long> {
     @Column(length = 500)
     private String description;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private boolean active = true;
+
     @CreatedDate
     @DateTimeFormat
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

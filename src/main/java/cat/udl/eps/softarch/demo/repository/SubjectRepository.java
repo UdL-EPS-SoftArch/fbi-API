@@ -15,4 +15,6 @@ public interface SubjectRepository extends CrudRepository<Subject, Long>, Paging
     List<Subject> findByName(@Param("name") String name);
 
     List<Subject> findByNameContainingIgnoreCase(@Param("text") String text);
+
+    boolean existsByNameIgnoreCase(@Param("name") String name);
 }

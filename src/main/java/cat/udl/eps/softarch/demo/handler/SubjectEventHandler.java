@@ -1,11 +1,10 @@
 package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Subject;
-import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.SubjectRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.core.annotation.*;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,6 +19,12 @@ public class SubjectEventHandler {
     @HandleBeforeCreate
     public void handleSubjectPreCreate(Subject subject) {
         checkAdmin();
+        if (subject.getName() != null) {
+            subject.setName(subject.getName().trim());
+            if (subjectRepository.existsByNameIgnoreCase(subject.getName())) {
+                throw new DataIntegrityViolationException("Subject name already in use");
+            }
+        }
     }
 
     @HandleBeforeSave
@@ -33,8 +38,7 @@ public class SubjectEventHandler {
     }
 
     private void checkAdmin() {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (user.getRole() != User.Role.ADMIN) {
+        if (!CurrentUser.isAdmin(CurrentUser.get())) {
             throw new AccessDeniedException("Only administrators can manage subjects");
         }
     }

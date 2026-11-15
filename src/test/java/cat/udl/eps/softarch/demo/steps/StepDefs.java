@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import cat.udl.eps.softarch.demo.DemoApplication;
+import cat.udl.eps.softarch.demo.config.HomeFeedPathFilter;
 import tools.jackson.databind.ObjectMapper;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.And;
@@ -26,7 +27,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 @ContextConfiguration(
-	classes = {DemoApplication.class},
+	classes = {DemoApplication.class, RecoveryTestConfiguration.class},
 	loader = SpringBootContextLoader.class
 )
 @DirtiesContext
@@ -49,6 +50,7 @@ public class StepDefs {
     public void setup() {
         this.mockMvc = MockMvcBuilders
                 .webAppContextSetup(this.wac)
+                .addFilters(this.wac.getBean(HomeFeedPathFilter.class))
                 .apply(SecurityMockMvcConfigurers.springSecurity())
                 .build();
     }

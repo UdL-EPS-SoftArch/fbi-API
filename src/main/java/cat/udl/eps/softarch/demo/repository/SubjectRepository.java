@@ -12,8 +12,7 @@ import org.springframework.data.rest.core.annotation.RestResource;
 
 import java.util.List;
 
-// Subjects are public: anyone can read them, only admins modify them (see SubjectEventHandler).
-// Archived subjects (active = false) are hidden from browsing and search, except for administrators.
+// Subjects are public: anyone can read them, only admins modify them (see SubjectEventHandler)
 @RepositoryRestResource
 public interface SubjectRepository extends CrudRepository<Subject, Long>, PagingAndSortingRepository<Subject, Long> {
 

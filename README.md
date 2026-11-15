@@ -47,6 +47,7 @@ classDiagram
         +int subject_id PK
         +string name
         +string description
+        +boolean archived
         +datetime created_at_utc
         +datetime updated_at_utc
     }

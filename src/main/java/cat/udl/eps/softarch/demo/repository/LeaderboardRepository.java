@@ -25,5 +25,9 @@ public interface LeaderboardRepository extends CrudRepository<Leaderboard, Long>
 
     List<Leaderboard> findBySubjectOrderByRankAsc(@Param("subject") Subject subject);
 
+    // Internal use only (SubjectEventHandler): does the subject have any leaderboard entry?
+    @RestResource(exported = false)
+    boolean existsBySubject(Subject subject);
+
     List<Leaderboard> findByUser(@Param("user") User user);
 }

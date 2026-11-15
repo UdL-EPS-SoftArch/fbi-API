@@ -1,19 +1,28 @@
 package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Subject;
+import cat.udl.eps.softarch.demo.repository.LeaderboardRepository;
 import cat.udl.eps.softarch.demo.repository.SubjectRepository;
+import cat.udl.eps.softarch.demo.repository.TestRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.core.annotation.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 @Component
 @RepositoryEventHandler
 public class SubjectEventHandler {
     final SubjectRepository subjectRepository;
+    final TestRepository testRepository;
+    final LeaderboardRepository leaderboardRepository;
 
-    public SubjectEventHandler(SubjectRepository subjectRepository) {
+    public SubjectEventHandler(SubjectRepository subjectRepository, TestRepository testRepository,
+                               LeaderboardRepository leaderboardRepository) {
         this.subjectRepository = subjectRepository;
+        this.testRepository = testRepository;
+        this.leaderboardRepository = leaderboardRepository;
     }
 
     @HandleBeforeCreate
@@ -36,9 +45,14 @@ public class SubjectEventHandler {
         }
     }
 
+    // Deleting a subject with content would destroy its tests, results and leaderboards: it has to be archived
     @HandleBeforeDelete
     public void handleSubjectPreDelete(Subject subject) {
         checkAdmin();
+        if (testRepository.existsBySubject(subject) || leaderboardRepository.existsBySubject(subject)) {
+            // ResponseStatusException keeps the message (Spring Data REST hides the one of DataIntegrityViolationException)
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "The subject has tests or results, archive it instead");
+        }
     }
 
     private void checkAdmin() {

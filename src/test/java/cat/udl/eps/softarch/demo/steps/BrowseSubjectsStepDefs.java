@@ -176,7 +176,7 @@ public class BrowseSubjectsStepDefs {
     @Given("a subject named {string} is archived")
     public void archived(String name) {
         Subject archived = subject(name, "Archived subject");
-        archived.setArchived(true);
+        archived.setActive(false);
         subjects.save(archived);
     }
 

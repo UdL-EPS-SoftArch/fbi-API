@@ -1,9 +1,11 @@
 package cat.udl.eps.softarch.demo.steps;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -28,6 +30,7 @@ import org.springframework.http.MediaType;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 public class SubjectStepDefs {
     private final StepDefs stepDefs;
@@ -192,6 +195,94 @@ public class SubjectStepDefs {
         assertFalse(subjectRepository.existsById(originalSubjectId + 1000), "No subject may appear with the new id");
     }
 
+    @Given("There is an archived subject with name {string}")
+    public void thereIsAnArchivedSubjectWithName(String name) {
+        thereIsASubjectWithName(name);
+        Subject subject = findSubject(name);
+        subject.setActive(false);
+        subjectRepository.save(subject);
+    }
+
+    @Given("The subject {string} has a test {string}")
+    public void theSubjectHasATest(String name, String title) {
+        Test test = new Test();
+        test.setSubject(findSubject(name));
+        test.setTitle(title);
+        testRepository.save(test);
+    }
+
+    @When("I delete the subject {string}")
+    public void iDeleteTheSubject(String name) throws Throwable {
+        // Without an Accept header Spring Data REST answers 204 No Content (with it, 200 and the deleted body)
+        stepDefs.result = stepDefs.mockMvc.perform(
+                delete(findSubject(name).getUri())
+                    .with(AuthenticationStepDefs.authenticate()))
+            .andDo(print());
+    }
+
+    @When("I archive the subject {string}")
+    public void iArchiveTheSubject(String name) throws Throwable {
+        performPatch(findSubject(name), new JSONObject().put("active", false));
+    }
+
+    @When("I restore the subject {string}")
+    public void iRestoreTheSubject(String name) throws Throwable {
+        performPatch(findSubject(name), new JSONObject().put("active", true));
+    }
+
+    @When("I create a test {string} in the subject {string}")
+    public void iCreateATestInTheSubject(String title, String subjectName) throws Throwable {
+        JSONObject test = new JSONObject();
+        test.put("title", title);
+        test.put("subject", findSubject(subjectName).getUri());
+
+        stepDefs.result = stepDefs.mockMvc.perform(
+                post("/tests")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(test.toString())
+                    .characterEncoding(StandardCharsets.UTF_8)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(AuthenticationStepDefs.authenticate()))
+            .andDo(print());
+    }
+
+    @And("The subject {string} is archived")
+    public void theSubjectIsArchived(String name) {
+        assertFalse(findSubject(name).isActive(), "Subject \"" + name + "\" should be archived");
+    }
+
+    // Public view (as a visitor), like "appears in the subjects list": administrators also see archived subjects
+    @And("The subject {string} does not appear in the subjects list")
+    public void theSubjectDoesNotAppearInTheSubjectsList(String name) throws Throwable {
+        stepDefs.mockMvc.perform(
+                get("/subjects")
+                    .param("size", "1000")
+                    .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$._embedded.subjects[*].name", not(hasItem(name))));
+    }
+
+    @And("The subject {string} does not appear when searching for {string}")
+    public void theSubjectDoesNotAppearWhenSearchingFor(String name, String text) throws Throwable {
+        stepDefs.mockMvc.perform(
+                get("/subjects/search/findByNameContainingIgnoreCase")
+                    .param("text", text)
+                    .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$._embedded.subjects[*].name", not(hasItem(name))));
+    }
+
+    @And("The logged in user sees the subject {string} in the subjects list")
+    public void theLoggedInUserSeesTheSubjectInTheSubjectsList(String name) throws Throwable {
+        stepDefs.mockMvc.perform(
+                get("/subjects")
+                    .param("size", "1000")
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(AuthenticationStepDefs.authenticate()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$._embedded.subjects[*].name", hasItem(name)));
+    }
+
     private void performPatch(Subject subject, JSONObject changes) throws Throwable {
         stepDefs.result = stepDefs.mockMvc.perform(
                 patch(subject.getUri())
@@ -209,8 +300,9 @@ public class SubjectStepDefs {
         return subjects.get(0);
     }
 
+    // findAll() without paging is not filtered (archived subjects included), so it works without a logged in user
     private long countSubjectsNamed(String name) {
-        return subjectRepository.findByNameContainingIgnoreCase(name.trim()).stream()
+        return StreamSupport.stream(subjectRepository.findAll().spliterator(), false)
                 .filter(s -> s.getName().trim().equalsIgnoreCase(name.trim()))
                 .count();
     }

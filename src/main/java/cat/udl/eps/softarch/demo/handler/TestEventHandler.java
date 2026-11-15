@@ -4,6 +4,7 @@ import cat.udl.eps.softarch.demo.domain.Test;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.TestRepository;
 import cat.udl.eps.softarch.demo.service.LeaderboardService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.core.annotation.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,10 @@ public class TestEventHandler {
         User user = CurrentUser.get();
         test.setAuthor(user);
         checkOfficialByAdmin(test, user);
+        // An archived subject keeps its tests, but no new ones can be added to it
+        if (test.getSubject() != null && !test.getSubject().isActive()) {
+            throw new DataIntegrityViolationException("Tests cannot be created in an archived subject");
+        }
         setPublishedAt(test);
     }
 

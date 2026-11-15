@@ -37,6 +37,7 @@ public class Subject extends UriEntity<Long> {
 
     @Formula("(select count(*) from test t where t.subject_id = id and t.status = 'PUBLISHED' and t.is_public = true)")
     private long publishedTestCount;
+    private boolean active = true;
 
     @CreatedDate
     @DateTimeFormat

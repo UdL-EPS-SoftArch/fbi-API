@@ -21,29 +21,38 @@ import java.util.Optional;
 public interface TestRepository extends CrudRepository<Test, Long>, PagingAndSortingRepository<Test, Long> {
 
     String VISIBILITY_CLAUSE =
-        "t.author.username = ?#{authentication.name} " +
+        "author.username = ?#{authentication.name} " +
         "OR (t.status = 'PUBLISHED' AND t.isPublic = true) " +
         "OR ?#{hasRole('ADMIN')} = true";
 
     @Override
-    @Query("SELECT t FROM Test t WHERE " + VISIBILITY_CLAUSE)
+    @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE " + VISIBILITY_CLAUSE)
     Page<Test> findAll(Pageable pageable);
 
     @Override
-    @Query("SELECT t FROM Test t WHERE t.id = :id AND (" + VISIBILITY_CLAUSE + ")")
+    @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE t.id = :id AND (" + VISIBILITY_CLAUSE + ")")
     Optional<Test> findById(@Param("id") Long id);
 
-    @Query("SELECT t FROM Test t WHERE t.author = :user AND (" + VISIBILITY_CLAUSE + ")")
+    @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE t.author = :user AND (" + VISIBILITY_CLAUSE + ")")
     Page<Test> findByAuthor(@Param("user") User author, Pageable pageable);
 
-    @Query("SELECT t FROM Test t WHERE t.subject = :subject AND (" + VISIBILITY_CLAUSE + ")")
+    @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE t.subject = :subject AND (" + VISIBILITY_CLAUSE + ")")
     Page<Test> findBySubject(@Param("subject") Subject subject, Pageable pageable);
 
     @Query("SELECT t FROM Test t WHERE t.subject = :subject AND t.status = 'PUBLISHED' AND t.isPublic = true")
     Page<Test> findPublicPublishedBySubject(@Param("subject") Subject subject, Pageable pageable);
 
-    @Query("SELECT t FROM Test t WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :text, '%')) AND (" + VISIBILITY_CLAUSE + ")")
+    @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :text, '%')) AND (" + VISIBILITY_CLAUSE + ")")
     Page<Test> findByTitleContaining(@Param("text") String text, Pageable pageable);
+
+    @RestResource(path = "featured", rel = "featured")
+    @Query("SELECT t FROM TestAttempt a JOIN a.test t " +
+           "WHERE t.status = 'PUBLISHED' AND t.isPublic = true " +
+           "AND a.status = 'SUBMITTED' AND a.attemptType = 'REGULAR' " +
+           "AND a.submittedAt >= ?#{T(java.time.Instant).now().minus(30, T(java.time.temporal.ChronoUnit).DAYS)} " +
+           "AND a.submittedAt <= ?#{T(java.time.Instant).now()} " +
+           "GROUP BY t ORDER BY COUNT(a) DESC, t.id ASC")
+    List<Test> findFeatured();
 
     // Not filtered by visibility: internal use only (the public search is findByTitleContaining)
     @RestResource(exported = false)

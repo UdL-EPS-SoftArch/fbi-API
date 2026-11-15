@@ -30,8 +30,10 @@ public class WebSecurityConfig {
                 "/", "/profile", "/profile/**",
                 "/subjects", "/subjects/*", "/subjects/search/findByName", "/subjects/search/findByNameContainingIgnoreCase",
                 "/tests", "/tests/*", "/tests/search/findByAuthor", "/tests/search/findBySubject", "/tests/search/findByTitleContaining",
+                "/tests/search/findPublicPublishedBySubject", "/tests/search/featured", // HomeFeedPathFilter maps /featuredTests here
                 "/badges", "/badges/*", "/badges/search/findByName", "/badges/search/findByIsActive",
                 "/leaderboards", "/leaderboards/*", "/leaderboards/search/findByLeaderboardTypeOrderByRankAsc", "/leaderboards/search/findBySubjectOrderByRankAsc", "/leaderboards/search/findByUser",
+                "/leaderboards/search/globalSummary", // HomeFeedPathFilter maps /leaderboardSummary here
                 "/users/*", "/users/search/findByUsernameContaining"
         };
         http.authorizeHttpRequests((auth) -> auth

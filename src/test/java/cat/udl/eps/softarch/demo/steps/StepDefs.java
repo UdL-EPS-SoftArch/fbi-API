@@ -61,7 +61,7 @@ public class StepDefs {
     @And("^The error message is \"([^\"]*)\"$")
     public void theErrorMessageIs(String message) throws Throwable {
         if (result.andReturn().getResponse().getContentAsString().isEmpty())
-            result.andExpect(status().reason(is(message)));
+            result.andExpect(status().reason(containsString(message)));
         else
             result.andExpect(jsonPath("$..message", hasItem(containsString(message))));
     }

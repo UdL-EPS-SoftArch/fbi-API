@@ -4,6 +4,7 @@ import cat.udl.eps.softarch.demo.domain.Test;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.TestRepository;
 import cat.udl.eps.softarch.demo.service.LeaderboardService;
+import cat.udl.eps.softarch.demo.service.TestContentService;
 import org.springframework.data.rest.core.annotation.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
@@ -15,10 +16,13 @@ import java.time.Instant;
 public class TestEventHandler {
     final TestRepository testRepository;
     final LeaderboardService leaderboardService;
+    final TestContentService testContentService;
 
-    public TestEventHandler(TestRepository testRepository, LeaderboardService leaderboardService) {
+    public TestEventHandler(TestRepository testRepository, LeaderboardService leaderboardService,
+                            TestContentService testContentService) {
         this.testRepository = testRepository;
         this.leaderboardService = leaderboardService;
+        this.testContentService = testContentService;
     }
 
     @HandleBeforeCreate
@@ -26,6 +30,11 @@ public class TestEventHandler {
         User user = CurrentUser.get();
         test.setAuthor(user);
         checkOfficialByAdmin(test, user);
+        testContentService.checkVisibility(test);
+        // A new test has no questions yet, so it can only be published once they are added
+        if (test.getStatus() == Test.Status.PUBLISHED) {
+            testContentService.checkPublishable(test);
+        }
         setPublishedAt(test);
     }
 
@@ -55,6 +64,11 @@ public class TestEventHandler {
             }
         }
         checkOfficialByAdmin(test, user);
+        testContentService.checkVisibility(test);
+        // Validated when the test becomes published (first publication or republication)
+        if (test.getStatus() == Test.Status.PUBLISHED && stored.getStatus() != Test.Status.PUBLISHED) {
+            testContentService.checkPublishable(test);
+        }
         setPublishedAt(test);
     }
 

@@ -20,6 +20,7 @@ import cat.udl.eps.softarch.demo.repository.TestRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.json.JSONObject;
 import org.springframework.http.MediaType;
@@ -37,6 +38,9 @@ public class SubjectStepDefs {
 
     // Id of the subject as it was before the edit, to check that it is never changed
     private Long originalSubjectId;
+
+    // Error thrown by the server when trying to change the id, if it did not answer with a response
+    private Exception idChangeError;
 
     public SubjectStepDefs(StepDefs stepDefs, SubjectRepository subjectRepository,
                            LeaderboardRepository leaderboardRepository, TestRepository testRepository,
@@ -118,7 +122,21 @@ public class SubjectStepDefs {
         JSONObject changes = new JSONObject();
         changes.put("id", originalSubjectId + 1000);
         changes.put("description", "Trying to change the id");
-        performPatch(subject, changes);
+        try {
+            performPatch(subject, changes);
+        } catch (Exception e) {
+            // MockMvc rethrows the errors that the server does not turn into a response
+            idChangeError = e;
+        }
+    }
+
+    @Then("The change of the id is rejected")
+    public void theChangeOfTheIdIsRejected() throws Throwable {
+        if (idChangeError != null) {
+            return; // The request failed on the server, so nothing was saved
+        }
+        int status = stepDefs.result.andReturn().getResponse().getStatus();
+        assertTrue(status >= 400, "Changing the id should be rejected, but the response code was " + status);
     }
 
     @And("The subject {string} has description {string}")
@@ -187,7 +205,7 @@ public class SubjectStepDefs {
 
     private Subject findSubject(String name) {
         List<Subject> subjects = subjectRepository.findByName(name);
-        assertFalse(subjects.isEmpty(), "There is no subject named \"" + name + "\"");
+        assertFalse(subjects.isEmpty(), "Expected a subject named \"" + name + "\", but none was found");
         return subjects.get(0);
     }
 

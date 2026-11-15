@@ -48,7 +48,8 @@ Feature: Edit a subject
     Given There is a subject with name "Logic"
     And I login as "admin" with password "password"
     When I try to change the id of the subject "Logic"
-    Then The subject "Logic" keeps its id
+    Then The change of the id is rejected
+    And The subject "Logic" keeps its id
 
   Scenario: A student cannot edit a subject
     Given There is a subject with name "Chemistry"

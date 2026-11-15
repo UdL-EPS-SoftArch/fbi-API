@@ -26,6 +26,14 @@ public class WebSecurityConfig {
 
     @Bean
     protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        String[] publicReads = {
+                "/", "/profile", "/profile/**",
+                "/subjects", "/subjects/*", "/subjects/search/findByName", "/subjects/search/findByNameContainingIgnoreCase",
+                "/tests", "/tests/*", "/tests/search/findByAuthor", "/tests/search/findBySubject", "/tests/search/findByTitleContaining",
+                "/badges", "/badges/*", "/badges/search/findByName", "/badges/search/findByIsActive",
+                "/leaderboards", "/leaderboards/*", "/leaderboards/search/findByLeaderboardTypeOrderByRankAsc", "/leaderboards/search/findBySubjectOrderByRankAsc", "/leaderboards/search/findByUser",
+                "/users/*", "/users/search/findByUsernameContaining"
+        };
         http.authorizeHttpRequests((auth) -> auth
                 .requestMatchers(HttpMethod.POST, "/password-reset-requests", "/password-reset-validations", "/password-reset-confirmations").permitAll()
                 .requestMatchers("/password-reset-requests/**", "/password-reset-validations/**", "/password-reset-confirmations/**").denyAll()
@@ -35,12 +43,14 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/users/*").denyAll()
                 .requestMatchers(HttpMethod.GET, "/featuredTests", "/leaderboardSummary").permitAll()
                 .requestMatchers(HttpMethod.GET, "/subjects/*", "/tests/*", "/badges/*", "/leaderboards/*").permitAll() // Public area for visitors
+                .requestMatchers(HttpMethod.GET, publicReads).permitAll()
+                .requestMatchers(HttpMethod.HEAD, publicReads).permitAll()
                 .requestMatchers(HttpMethod.GET, "/*/*").authenticated()
                 .requestMatchers(HttpMethod.POST, "/*/*").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/*/*").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/*/*").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/*/*").authenticated()
-                .anyRequest().permitAll())
+                .anyRequest().authenticated())
             .csrf((csrf) -> csrf.disable())
             .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors((cors) -> cors.configurationSource(corsConfigurationSource()))

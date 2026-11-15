@@ -2,16 +2,22 @@ package cat.udl.eps.softarch.demo.steps;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import cat.udl.eps.softarch.demo.domain.Leaderboard;
 import cat.udl.eps.softarch.demo.domain.Subject;
+import cat.udl.eps.softarch.demo.domain.Test;
 import cat.udl.eps.softarch.demo.repository.LeaderboardRepository;
 import cat.udl.eps.softarch.demo.repository.SubjectRepository;
+import cat.udl.eps.softarch.demo.repository.TestRepository;
+import cat.udl.eps.softarch.demo.repository.UserRepository;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
@@ -19,18 +25,27 @@ import org.json.JSONObject;
 import org.springframework.http.MediaType;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 
 public class SubjectStepDefs {
     private final StepDefs stepDefs;
     private final SubjectRepository subjectRepository;
     private final LeaderboardRepository leaderboardRepository;
+    private final TestRepository testRepository;
+    private final UserRepository userRepository;
+
+    // Id of the subject as it was before the edit, to check that it is never changed
+    private Long originalSubjectId;
 
     public SubjectStepDefs(StepDefs stepDefs, SubjectRepository subjectRepository,
-                           LeaderboardRepository leaderboardRepository) {
+                           LeaderboardRepository leaderboardRepository, TestRepository testRepository,
+                           UserRepository userRepository) {
         this.stepDefs = stepDefs;
         this.subjectRepository = subjectRepository;
         this.leaderboardRepository = leaderboardRepository;
+        this.testRepository = testRepository;
+        this.userRepository = userRepository;
     }
 
     @Given("There is a subject with name {string}")
@@ -85,6 +100,95 @@ public class SubjectStepDefs {
     @And("There is only one subject named {string}")
     public void thereIsOnlyOneSubjectNamed(String name) {
         assertEquals(1, countSubjectsNamed(name), "Expected exactly one subject named \"" + name + "\"");
+    }
+
+    @When("I edit the subject {string} to name {string} and description {string}")
+    public void iEditTheSubject(String currentName, String name, String description) throws Throwable {
+        Subject subject = findSubject(currentName);
+        JSONObject changes = new JSONObject();
+        changes.put("name", name);
+        changes.put("description", description);
+        performPatch(subject, changes);
+    }
+
+    @When("I try to change the id of the subject {string}")
+    public void iTryToChangeTheIdOfTheSubject(String name) throws Throwable {
+        Subject subject = findSubject(name);
+        originalSubjectId = subject.getId();
+        JSONObject changes = new JSONObject();
+        changes.put("id", originalSubjectId + 1000);
+        changes.put("description", "Trying to change the id");
+        performPatch(subject, changes);
+    }
+
+    @And("The subject {string} has description {string}")
+    public void theSubjectHasDescription(String name, String description) {
+        assertEquals(description, findSubject(name).getDescription());
+    }
+
+    @And("There is no subject named {string}")
+    public void thereIsNoSubjectNamed(String name) {
+        assertEquals(0, countSubjectsNamed(name), "There should be no subject named \"" + name + "\"");
+    }
+
+    @Given("The subject {string} has a test {string} and a leaderboard entry of {int} points for {string}")
+    public void theSubjectHasATestAndALeaderboardEntry(String name, String title, int score, String username) {
+        Subject subject = findSubject(name);
+        originalSubjectId = subject.getId();
+
+        Test test = new Test();
+        test.setSubject(subject);
+        test.setTitle(title);
+        testRepository.save(test);
+
+        Leaderboard entry = new Leaderboard();
+        entry.setUser(userRepository.findByUsername(username).orElseThrow());
+        entry.setSubject(subject);
+        entry.setLeaderboardType(Leaderboard.LeaderboardType.SUBJECT);
+        entry.setScore(score);
+        entry.setRank(1);
+        entry.setCalculatedAt(Instant.now());
+        leaderboardRepository.save(entry);
+    }
+
+    @And("The subject {string} keeps its test {string} and its leaderboard entry of {int} points")
+    public void theSubjectKeepsItsTestAndLeaderboardEntry(String name, String title, int score) {
+        Subject subject = findSubject(name);
+        assertEquals(originalSubjectId, subject.getId(), "The id of the subject must not change");
+
+        // findByTitle is not filtered by visibility, so it can be used without a logged in user
+        List<Test> tests = testRepository.findByTitle(title);
+        assertEquals(1, tests.size(), "Expected exactly one test titled \"" + title + "\"");
+        assertEquals(subject.getId(), tests.get(0).getSubject().getId(), "The test must still belong to the subject");
+
+        List<Leaderboard> entries = leaderboardRepository.findBySubjectOrderByRankAsc(subject);
+        assertEquals(1, entries.size(), "The leaderboard of the subject must keep its entry");
+        assertEquals(score, entries.get(0).getScore(), "The score of the leaderboard entry must not change");
+    }
+
+    @And("The subject {string} keeps its id")
+    public void theSubjectKeepsItsId(String name) {
+        List<Subject> subjects = subjectRepository.findByName(name);
+        assertEquals(1, subjects.size(), "Expected exactly one subject named \"" + name + "\"");
+        assertEquals(originalSubjectId, subjects.get(0).getId(), "The id of the subject must not change");
+        assertFalse(subjectRepository.existsById(originalSubjectId + 1000), "No subject may appear with the new id");
+    }
+
+    private void performPatch(Subject subject, JSONObject changes) throws Throwable {
+        stepDefs.result = stepDefs.mockMvc.perform(
+                patch(subject.getUri())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(changes.toString())
+                    .characterEncoding(StandardCharsets.UTF_8)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(AuthenticationStepDefs.authenticate()))
+            .andDo(print());
+    }
+
+    private Subject findSubject(String name) {
+        List<Subject> subjects = subjectRepository.findByName(name);
+        assertFalse(subjects.isEmpty(), "There is no subject named \"" + name + "\"");
+        return subjects.get(0);
     }
 
     private long countSubjectsNamed(String name) {

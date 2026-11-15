@@ -102,14 +102,14 @@ public class BrowseSubjectsStepDefs {
 
     private JsonNode listedSubject(String name) throws Exception {
         for (JsonNode subject : collection("subjects")) {
-            if (name.equals(subject.path("name").asText())) return subject;
+            if (name.equals(subject.path("name").asString())) return subject;
         }
         fail("Subject missing from catalogue: " + name);
         return null;
     }
 
     private String link(JsonNode node, String relation) {
-        String href = node.path("_links").path(relation).path("href").asText();
+        String href = node.path("_links").path(relation).path("href").asString("");
         assertFalse(href.isBlank(), "Missing HAL link: " + relation);
         return href.replaceAll("\\{.*", "");
     }
@@ -117,7 +117,7 @@ public class BrowseSubjectsStepDefs {
     @Then("the catalogue contains subject {string} with description {string} and {int} published tests")
     public void catalogueContains(String name, String description, int count) throws Exception {
         JsonNode subject = listedSubject(name);
-        assertEquals(description, subject.path("description").asText());
+        assertEquals(description, subject.path("description").asString());
         assertTrue(subject.has("publishedTestCount"), "Missing publishedTestCount");
         assertEquals(count, subject.path("publishedTestCount").asInt());
         link(subject, "self");
@@ -133,8 +133,8 @@ public class BrowseSubjectsStepDefs {
     @Then("the subject detail has description {string} and links to published tests and leaderboard")
     public void detail(String description) throws Exception {
         JsonNode subject = body();
-        assertEquals("Architecture", subject.path("name").asText());
-        assertEquals(description, subject.path("description").asText());
+        assertEquals("Architecture", subject.path("name").asString());
+        assertEquals(description, subject.path("description").asString());
         link(subject, "publishedTests");
         link(subject, "leaderboard");
     }
@@ -158,7 +158,7 @@ public class BrowseSubjectsStepDefs {
         Map<String, String> actual = new HashMap<>();
         for (JsonNode item : items) {
             link(item, "self");
-            actual.put(item.path("title").asText(), item.path("testType").asText());
+            actual.put(item.path("title").asString(), item.path("testType").asString());
         }
         assertEquals(Map.of(first, firstType, second, secondType), actual);
     }
@@ -182,6 +182,6 @@ public class BrowseSubjectsStepDefs {
 
     @Then("the catalogue does not contain subject {string}")
     public void absent(String name) throws Exception {
-        for (JsonNode subject : collection("subjects")) assertNotEquals(name, subject.path("name").asText());
+        for (JsonNode subject : collection("subjects")) assertNotEquals(name, subject.path("name").asString());
     }
 }

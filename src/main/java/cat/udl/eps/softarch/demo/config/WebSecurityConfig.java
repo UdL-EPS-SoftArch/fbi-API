@@ -27,6 +27,8 @@ public class WebSecurityConfig {
     @Bean
     protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests((auth) -> auth
+                .requestMatchers(HttpMethod.POST, "/password-changes").authenticated()
+                .requestMatchers("/password-changes/**").denyAll()
                 .requestMatchers(HttpMethod.POST, "/password-reset-requests", "/password-reset-validations", "/password-reset-confirmations").permitAll()
                 .requestMatchers("/password-reset-requests/**", "/password-reset-validations/**", "/password-reset-confirmations/**").denyAll()
                 .requestMatchers(HttpMethod.GET, "/identity").authenticated()

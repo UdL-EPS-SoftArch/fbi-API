@@ -51,6 +51,10 @@ public interface TestRepository extends CrudRepository<Test, Long>, PagingAndSor
            "GROUP BY t ORDER BY COUNT(a) DESC, t.id ASC")
     List<Test> findFeatured();
 
+    // Not filtered by visibility (counts drafts and private tests too): internal use only (SubjectEventHandler)
+    @RestResource(exported = false)
+    boolean existsBySubject(Subject subject);
+
     // Not filtered by visibility: internal use only (the public search is findByTitleContaining)
     @RestResource(exported = false)
     List<Test> findByTitle(String title);

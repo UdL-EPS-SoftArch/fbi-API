@@ -61,6 +61,12 @@ public class User extends UriEntity<Long> implements UserDetails {
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private boolean passwordReset;
 
+	// Not persisted (the class diagram has no terms field): registration requires the client
+	// to send acceptTerms = true, accepting the Terms of Use and the Privacy Policy
+	@Transient
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+	private Boolean acceptTerms;
+
 	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
 	private String fullName;
 

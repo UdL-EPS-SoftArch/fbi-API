@@ -1,3 +1,4 @@
+@ratelimit
 Feature: Rate limit public and sensitive requests
   In order to prevent large-scale data extraction and abuse
   As an administrator

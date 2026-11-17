@@ -1,24 +1,37 @@
 package cat.udl.eps.softarch.demo.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
 import java.time.Instant;
 
 /**
  * Request counter for one rate limit key, such as {@code REGISTRATION:203.0.113.7}.
- * Internal entity: it is never exposed through Spring Data REST.
+ * Internal entity: its repository is not exported through Spring Data REST.
  */
 @Entity
-public class RateLimit {
+@Data
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class RateLimit extends UriEntity<Long> {
+
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank
+    @Column(unique = true)
+    private String rateKey;
+
     private Instant windowStart;
+
     private int requestCount;
 
-    protected RateLimit() {}
-
-    public RateLimit(String id, Instant now) {
-        this.id = id;
+    public RateLimit(String rateKey, Instant now) {
+        this.rateKey = rateKey;
         this.windowStart = now;
     }
 }

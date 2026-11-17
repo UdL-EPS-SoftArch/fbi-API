@@ -39,6 +39,16 @@ public interface UserRepository extends CrudRepository<User, Long>, PagingAndSor
   @RestResource(exported = false)
   Optional<User> findByEmail(String email);
 
+  // Login accepts the email or the username (US-AUT-02); not filtered, internal use only
+  @RestResource(exported = false)
+  default Optional<User> findByLoginIdentifier(String identifier) {
+    if (identifier == null || identifier.isBlank()) {
+      return Optional.empty();
+    }
+    String trimmed = identifier.trim();
+    return findByEmail(trimmed).or(() -> findByUsername(trimmed));
+  }
+
   boolean existsByUsername(@Param("username") String username);
 
   @Query("SELECT u FROM User u WHERE u.username LIKE CONCAT('%', :text, '%') AND (" + DISCOVERABLE_CLAUSE + ")")

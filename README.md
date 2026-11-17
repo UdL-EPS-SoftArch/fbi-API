@@ -39,6 +39,8 @@ classDiagram
         +string username UK
         +string full_name
         +string role
+        +boolean email_verified
+        +boolean suspended
         +datetime created_at_utc
         +datetime updated_at_utc
     }
@@ -183,6 +185,20 @@ classDiagram
 
     BADGE "1" -- "0..*" USER_BADGE : awarded_as
 ```
+
+## Authentication
+
+The API uses stateless **HTTP Basic** authentication. To log in, the client sends the credentials to `GET /identity`, which returns the authenticated user and their `role`, and then sends the same `Authorization` header on every request. The identifier can be the **email** or the **username**.
+
+| Situation | Status | `code` in the JSON body |
+|---|---|---|
+| Valid credentials | `200` | — (the user resource) |
+| Wrong email/username or password | `401` | `BAD_CREDENTIALS` ("Incorrect email or password", the same for unknown accounts) |
+| Email not verified | `403` | `EMAIL_NOT_VERIFIED` |
+| Account suspended | `403` | `ACCOUNT_SUSPENDED` |
+| 5 consecutive failed attempts | `429` | `TOO_MANY_LOGIN_ATTEMPTS` (blocked for 15 minutes, see the `Retry-After` header) |
+
+The account status (unverified, suspended) is only revealed when the password is correct. Requests without credentials to a protected resource get an empty `401`.
 
 ## AI-Assisted Spec-Driven Development (SDD)
 

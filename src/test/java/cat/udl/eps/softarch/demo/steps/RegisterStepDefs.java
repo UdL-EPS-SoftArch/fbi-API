@@ -1,6 +1,7 @@
 package cat.udl.eps.softarch.demo.steps;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -72,17 +73,44 @@ public class RegisterStepDefs {
 
   @When("^I register a new user with username \"([^\"]*)\", email \"([^\"]*)\" and password \"([^\"]*)\"$")
   public void iRegisterANewUserWithUsernameEmailAndPassword(String username, String email, String password) throws Throwable {
+    register(username, email, password, new JSONObject().put("acceptTerms", true));
+  }
+
+  @When("^I register a new user with username \"([^\"]*)\", email \"([^\"]*)\" and password \"([^\"]*)\" without accepting the terms$")
+  public void iRegisterANewUserWithoutAcceptingTheTerms(String username, String email, String password) throws Throwable {
+    register(username, email, password, new JSONObject());
+  }
+
+  @When("^I register a new user with username \"([^\"]*)\", email \"([^\"]*)\" and password \"([^\"]*)\" choosing the role \"([^\"]*)\"$")
+  public void iRegisterANewUserChoosingTheRole(String username, String email, String password, String role) throws Throwable {
+    register(username, email, password, new JSONObject().put("acceptTerms", true).put("role", role));
+  }
+
+  @And("^The user \"([^\"]*)\" has the \"([^\"]*)\" role$")
+  public void theUserHasTheRole(String username, String role) {
+    User user = userRepository.findByUsername(username).orElseThrow();
+    assertEquals(User.Role.valueOf(role), user.getRole());
+  }
+
+  private void register(String username, String email, String password, JSONObject extraFields) throws Throwable {
     User user = new User();
     user.setUsername(username);
     user.setEmail(email);
 
+    // Private profile fields are not serialized outside an owner/admin request,
+    // so email, password and the extra fields are set on the raw JSON
+    JSONObject json = new JSONObject(stepDefs.mapper.writeValueAsString(user))
+            .put("email", email)
+            .put("password", password);
+    for (var keys = extraFields.keys(); keys.hasNext(); ) {
+      String key = String.valueOf(keys.next());
+      json.put(key, extraFields.get(key));
+    }
+
     stepDefs.result = stepDefs.mockMvc.perform(
             post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(new JSONObject(
-                            stepDefs.mapper.writeValueAsString(user)
-                    // Private profile fields are not serialized outside an owner/admin request
-                    ).put("email", email).put("password", password).toString())
+                    .content(json.toString())
                     .characterEncoding(StandardCharsets.UTF_8)
                     .accept(MediaType.APPLICATION_JSON)
                     .with(AuthenticationStepDefs.authenticate()))

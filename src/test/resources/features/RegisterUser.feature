@@ -14,8 +14,9 @@ Feature: Register User
   Scenario: Register existing username
     Given There is a registered user with username "user" and password "existing" and email "user@sample.app"
     And I'm not logged in
-    When I register a new user with username "user", email "user@sample.app" and password "newpassword"
+    When I register a new user with username "user", email "user2@sample.app" and password "newpassword"
     Then The response code is 409
+    And The error message is "This public name is already taken, please choose another one"
     And I cannot login with username "user" and password "newpassword"
 
   Scenario: Register user when already authenticated
@@ -57,4 +58,18 @@ Feature: Register User
     And I'm not logged in
     When I register a new user with username "user2", email "user@sample.app" and password "password2"
     Then The response code is 409
+    And The error message is "This email cannot be used, try logging in or recovering your password"
     And I can login with username "user" and password "password"
+
+  Scenario: Register without accepting the terms of use
+    Given I'm not logged in
+    When I register a new user with username "user", email "user@sample.app" and password "password" without accepting the terms
+    Then The response code is 400
+    And The error message is "The Terms of Use and Privacy Policy must be accepted"
+    And It has not been created a user with username "user"
+
+  Scenario: Register trying to choose a role
+    Given I'm not logged in
+    When I register a new user with username "user", email "user@sample.app" and password "password" choosing the role "ADMIN"
+    Then The response code is 201
+    And The user "user" has the "STUDENT" role

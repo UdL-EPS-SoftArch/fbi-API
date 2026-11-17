@@ -1,6 +1,15 @@
 allowed-origins: http://localhost:3000
 default-password: password
 
+# All tests share 127.0.0.1, so keep limits out of reach; RateLimiting.feature lowers them per scenario.
+rate-limit:
+  rules:
+    public:       { limit: 1000000, window-seconds: 60 }
+    login:        { limit: 1000000, window-seconds: 60 }
+    registration: { limit: 1000000, window-seconds: 60 }
+    recovery:     { limit: 1000000, window-seconds: 60 }
+    reports:      { limit: 1000000, window-seconds: 60 }
+
 logging:
     level:
         org:

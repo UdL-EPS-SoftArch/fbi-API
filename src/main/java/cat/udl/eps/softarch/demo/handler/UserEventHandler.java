@@ -25,9 +25,11 @@ public class UserEventHandler {
     final Logger logger = LoggerFactory.getLogger(User.class);
 
     final UserRepository userRepository;
+    final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
-    public UserEventHandler(UserRepository userRepository) {
+    public UserEventHandler(UserRepository userRepository, org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.userRepository = userRepository;
+        this.jdbc = jdbc;
     }
 
     @HandleBeforeCreate
@@ -52,8 +54,14 @@ public class UserEventHandler {
 
     @HandleBeforeSave
     public void handleUserPreSave(User user) {
-        logger.info("Before updating: {}", user.toString());
+        logger.info("Before updating user {}", user.getId());
         checkSelfOrAdmin(user, "Users can only modify their own profile");
+        String storedPassword = jdbc.queryForObject(
+                "SELECT password FROM demo_user WHERE id = ?", String.class, user.getId());
+        if (!java.util.Objects.equals(storedPassword, user.getPassword()) || user.isPasswordReset()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Use password changes to update credentials");
+        }
     }
 
     private void checkSelfOrAdmin(User target, String message) {
@@ -83,7 +91,7 @@ public class UserEventHandler {
 
     @HandleAfterSave
     public void handleUserPostSave(User user) {
-        logger.info("After updating: {}", user.toString());
+        logger.info("After updating user {}", user.getId());
         if (user.isPasswordReset()) {
             user.encodePassword();
         }

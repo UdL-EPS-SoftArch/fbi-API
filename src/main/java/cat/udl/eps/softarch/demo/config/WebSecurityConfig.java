@@ -25,7 +25,8 @@ public class WebSecurityConfig {
     String[] allowedOrigins;
 
     @Bean
-    protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    protected SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                      LoginFailureEntryPoint loginFailureEntryPoint) throws Exception {
         String[] publicReads = {
                 "/", "/profile", "/profile/**",
                 "/subjects", "/subjects/*", "/subjects/search/findByName", "/subjects/search/findByNameContainingIgnoreCase",
@@ -58,7 +59,9 @@ public class WebSecurityConfig {
             .csrf((csrf) -> csrf.disable())
             .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors((cors) -> cors.configurationSource(corsConfigurationSource()))
-            .httpBasic((httpBasic) -> httpBasic.realmName("demo"));
+            .httpBasic((httpBasic) -> httpBasic
+                    .realmName(LoginFailureEntryPoint.REALM)
+                    .authenticationEntryPoint(loginFailureEntryPoint));
         return http.build();
     }
 

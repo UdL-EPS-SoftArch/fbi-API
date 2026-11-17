@@ -1,5 +1,6 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.*;
@@ -61,6 +62,17 @@ public class User extends UriEntity<Long> implements UserDetails {
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private boolean passwordReset;
 
+	// Unverified accounts cannot log in (US-AUT-02). Until the verification email exists
+	// (US-AUT-07), new accounts are created as verified.
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
+	private boolean emailVerified = true;
+
+	// Suspended accounts cannot log in (US-AUT-02). Managed by administrators (US-ADM-33).
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
+	private boolean suspended;
+
 	// Not persisted (the class diagram has no terms field): registration requires the client
 	// to send acceptTerms = true, accepting the Terms of Use and the Privacy Policy
 	@Transient
@@ -109,8 +121,9 @@ public class User extends UriEntity<Long> implements UserDetails {
 	}
 
 	@Override
+	@JsonIgnore
 	public boolean isAccountNonLocked() {
-		return true;
+		return !suspended;
 	}
 
 	@Override
@@ -119,7 +132,8 @@ public class User extends UriEntity<Long> implements UserDetails {
 	}
 
 	@Override
+	@JsonIgnore
 	public boolean isEnabled() {
-		return true;
+		return emailVerified;
 	}
 }

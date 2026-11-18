@@ -26,9 +26,11 @@ public class QuestionTransactionFilter extends OncePerRequestFilter {
         String path = request.getRequestURI().substring(request.getContextPath().length());
         boolean questionWrite = WRITE_METHODS.contains(request.getMethod())
                 && (path.equals("/questions") || path.matches("/questions/[^/]+"));
+        boolean reorder = request.getMethod().equals("POST") && path.equals("/question-reorders");
+        boolean attemptCreate = request.getMethod().equals("POST") && path.equals("/testAttempts");
         boolean attemptUpdate = Set.of("PUT", "PATCH").contains(request.getMethod())
                 && path.matches("/testAttempts/[^/]+");
-        return !questionWrite && !attemptUpdate;
+        return !questionWrite && !attemptUpdate && !reorder && !attemptCreate;
     }
 
     @Override

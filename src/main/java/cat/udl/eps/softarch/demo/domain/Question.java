@@ -45,6 +45,7 @@ public class Question extends UriEntity<Long> {
     @Enumerated(EnumType.STRING)
     private QuestionType questionType = QuestionType.SINGLE_CHOICE;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer orderIndex;
 
     @NotNull

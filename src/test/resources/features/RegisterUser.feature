@@ -8,7 +8,9 @@ Feature: Register User
     And I'm not logged in
     When I register a new user with username "user", email "user@sample.app" and password "password"
     Then The response code is 201
-    And I can login with username "user" and password "password"
+    And A verification link is sent to "user@sample.app"
+    When I open the emailed verification link
+    Then I can login with username "user" and password "password"
     And It has been created a user with username "user" and email "user@sample.app", the password is not returned
 
   Scenario: Register existing username

@@ -1,6 +1,7 @@
 package cat.udl.eps.softarch.demo.domain;
 
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.*;
@@ -10,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Data
@@ -66,6 +68,19 @@ public class TestAttempt extends UriEntity<Long> {
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Boolean countsForLeaderboard = false;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @ElementCollection
+    @OrderColumn(name = "question_position")
+    private List<Long> questionIds;
+
+    @JsonIgnore
+    private Boolean questionOrderRecorded;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public List<Long> getQuestionIds() {
+        return Boolean.TRUE.equals(questionOrderRecorded) ? questionIds : null;
+    }
 
     @DateTimeFormat
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

@@ -4,6 +4,8 @@ import cat.udl.eps.softarch.demo.domain.Test;
 import cat.udl.eps.softarch.demo.domain.TestAttempt;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.TestAttemptRepository;
+import cat.udl.eps.softarch.demo.repository.QuestionRepository;
+import cat.udl.eps.softarch.demo.repository.TestRepository;
 import cat.udl.eps.softarch.demo.service.BadgeService;
 import cat.udl.eps.softarch.demo.service.LeaderboardService;
 import cat.udl.eps.softarch.demo.service.TestAttemptService;
@@ -19,14 +21,18 @@ import java.time.Instant;
 @RepositoryEventHandler
 public class TestAttemptEventHandler {
     final TestAttemptRepository testAttemptRepository;
+    final QuestionRepository questions;
+    final TestRepository tests;
     final TestAttemptService testAttemptService;
     final LeaderboardService leaderboardService;
     final BadgeService badgeService;
 
-    public TestAttemptEventHandler(TestAttemptRepository testAttemptRepository,
+    public TestAttemptEventHandler(QuestionRepository questions, TestRepository tests, TestAttemptRepository testAttemptRepository,
                                    TestAttemptService testAttemptService,
                                    LeaderboardService leaderboardService,
                                    BadgeService badgeService) {
+        this.questions = questions;
+        this.tests = tests;
         this.testAttemptRepository = testAttemptRepository;
         this.testAttemptService = testAttemptService;
         this.leaderboardService = leaderboardService;
@@ -52,6 +58,9 @@ public class TestAttemptEventHandler {
         if (!admin) {
             checkAvailable(test, user);
         }
+        tests.lockForContentChange(test.getId()).orElseThrow();
+        attempt.setQuestionIds(new java.util.ArrayList<>(questions.listByTestId(test.getId()).stream().map(q -> q.getId()).toList()));
+        attempt.setQuestionOrderRecorded(true);
         attempt.setAttemptNumber((int) testAttemptRepository.countByUserAndTest(user, test) + 1);
     }
 

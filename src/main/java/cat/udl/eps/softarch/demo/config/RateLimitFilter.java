@@ -16,7 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Applies per-IP limits to reads, registration and password recovery. Runs inside the security
+ * Applies per-IP limits to reads, registration, password recovery and email verification. Runs inside the security
  * chain, before authentication, so blocked requests never reach the password check. Failed logins
  * are limited by LoginThrottlingService (US-AUT-02), and reports in ReportEventHandler, where the
  * authenticated user is known.
@@ -24,6 +24,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class RateLimitFilter extends OncePerRequestFilter {
     private static final Set<String> RECOVERY_PATHS = Set.of(
             "/password-reset-requests", "/password-reset-validations", "/password-reset-confirmations");
+    private static final Set<String> VERIFICATION_PATHS = Set.of(
+            "/email-verification-requests", "/email-verifications");
 
     private final RateLimitService rateLimits;
 
@@ -45,6 +47,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 rateLimits.consume("registration", ip);
             } else if ("POST".equals(method) && RECOVERY_PATHS.contains(path)) {
                 rateLimits.consume("recovery", ip);
+            } else if ("POST".equals(method) && VERIFICATION_PATHS.contains(path)) {
+                rateLimits.consume("verification", ip);
             }
         } catch (RateLimitExceededException exceeded) {
             reject(response, exceeded.getRetryAfterSeconds());

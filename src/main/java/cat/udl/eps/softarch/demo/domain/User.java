@@ -62,8 +62,8 @@ public class User extends UriEntity<Long> implements UserDetails {
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private boolean passwordReset;
 
-	// Unverified accounts cannot log in (US-AUT-02). Until the verification email exists
-	// (US-AUT-07), new accounts are created as verified.
+	// Unverified accounts cannot log in (US-AUT-02). Accounts registered through the API start
+	// unverified and receive a verification link (US-AUT-07); seeded accounts are verified.
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
 	private boolean emailVerified = true;

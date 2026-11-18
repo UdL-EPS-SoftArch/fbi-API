@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.data.rest.core.annotation.RestResource;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,6 +56,10 @@ public interface UserRepository extends CrudRepository<User, Long>, PagingAndSor
   // does not reveal which emails are registered
   @RestResource(exported = false)
   boolean existsByEmail(String email);
+
+  // Unverified accounts to delete automatically (US-AUT-07); internal use only
+  @RestResource(exported = false)
+  List<User> findByEmailVerifiedFalseAndCreatedAtBefore(Instant cutoff);
 
   @Query("SELECT u FROM User u WHERE u.username LIKE CONCAT('%', :text, '%') AND (" + DISCOVERABLE_CLAUSE + ")")
   List<User> findByUsernameContaining(@Param("text") String text);

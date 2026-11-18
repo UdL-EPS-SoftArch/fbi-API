@@ -15,6 +15,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.data.repository.query.SecurityEvaluationContextExtension;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.security.web.authentication.logout.HeaderWriterLogoutHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
@@ -35,11 +37,13 @@ public class WebSecurityConfig {
     String[] allowedOrigins;
 
     @Bean
-    protected SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                      LoginFailureEntryPoint loginFailureEntryPoint,
-                                                      SessionService sessionService,
-                                                      SessionTokenLogoutHandler sessionTokenLogoutHandler) throws Exception {
-    protected SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitService rateLimitService, LoginFailureEntryPoint loginFailureEntryPoint) throws Exception {
+    protected SecurityFilterChain securityFilterChain(
+        HttpSecurity http,
+        RateLimitService rateLimitService,
+        LoginFailureEntryPoint loginFailureEntryPoint,
+        PlatformTransactionManager transactionManager,
+        SessionService sessionService,
+        SessionTokenLogoutHandler sessionTokenLogoutHandler) throws Exception {
         String[] publicReads = {
                 "/", "/profile", "/profile/**",
                 "/subjects", "/subjects/*", "/subjects/search/findByName", "/subjects/search/findByNameContainingIgnoreCase",
@@ -50,7 +54,8 @@ public class WebSecurityConfig {
                 "/leaderboards/search/globalSummary", // HomeFeedPathFilter maps /leaderboardSummary here
                 "/users/*", "/users/search/findByUsernameContaining"
         };
-        http.authorizeHttpRequests((auth) -> auth
+        http.addFilterAfter(new QuestionTransactionFilter(transactionManager), AuthorizationFilter.class)
+            .authorizeHttpRequests((auth) -> auth
                 .requestMatchers(HttpMethod.POST, "/password-changes").authenticated()
                 .requestMatchers("/password-changes/**").denyAll()
                 .requestMatchers(HttpMethod.POST, "/password-reset-requests", "/password-reset-validations", "/password-reset-confirmations").permitAll()

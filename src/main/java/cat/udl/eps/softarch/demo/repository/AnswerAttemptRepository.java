@@ -5,6 +5,7 @@ import cat.udl.eps.softarch.demo.domain.TestAttempt;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
@@ -34,6 +35,11 @@ public interface AnswerAttemptRepository extends CrudRepository<AnswerAttempt, L
 
     @Query("SELECT a FROM AnswerAttempt a WHERE a.attempt = :attempt AND (" + OWNERSHIP_CLAUSE + ")")
     Page<AnswerAttempt> findByAttempt(@Param("attempt") TestAttempt attempt, Pageable pageable);
+
+    @RestResource(exported = false)
+    @Modifying(flushAutomatically = true)
+    @Query("DELETE FROM AnswerAttempt a WHERE a.question.id = :questionId")
+    void deleteForQuestion(@Param("questionId") Long questionId);
 
     /** Values as stored in the database (never the entity merged with the request body). */
     interface AnswerSnapshot {

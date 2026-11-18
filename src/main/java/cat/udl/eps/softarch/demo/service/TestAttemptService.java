@@ -9,6 +9,8 @@ import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.AnswerAttemptRepository;
 import cat.udl.eps.softarch.demo.repository.AnswerOptionRepository;
 import cat.udl.eps.softarch.demo.repository.QuestionRepository;
+import cat.udl.eps.softarch.demo.repository.TestAttemptRepository;
+import cat.udl.eps.softarch.demo.repository.TestRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,13 +31,18 @@ public class TestAttemptService {
     private final QuestionRepository questionRepository;
     private final AnswerOptionRepository answerOptionRepository;
     private final AnswerAttemptRepository answerAttemptRepository;
+    private final TestAttemptRepository testAttemptRepository;
+    private final TestRepository testRepository;
 
     public TestAttemptService(QuestionRepository questionRepository,
                               AnswerOptionRepository answerOptionRepository,
-                              AnswerAttemptRepository answerAttemptRepository) {
+                              AnswerAttemptRepository answerAttemptRepository,
+                              TestAttemptRepository testAttemptRepository, TestRepository testRepository) {
         this.questionRepository = questionRepository;
         this.answerOptionRepository = answerOptionRepository;
         this.answerAttemptRepository = answerAttemptRepository;
+        this.testAttemptRepository = testAttemptRepository;
+        this.testRepository = testRepository;
     }
 
     /**
@@ -47,6 +54,7 @@ public class TestAttemptService {
     public void submit(TestAttempt attempt) {
         Instant now = Instant.now();
         Long testId = attempt.getTest().getId();
+        testRepository.lockForContentChange(testId).orElseThrow();
 
         List<Question> questions = questionRepository.listByTestId(testId);
 
@@ -105,6 +113,48 @@ public class TestAttemptService {
                 ? 0
                 : (int) Duration.between(attempt.getStartedAt(), now).getSeconds());
         attempt.setCountsForLeaderboard(isEligibleForLeaderboard(attempt));
+    }
+
+    @Transactional
+    public void recalculateSubmittedAttempts(Long testId) {
+        List<Question> questions = questionRepository.listByTestId(testId);
+        for (TestAttempt attempt : testAttemptRepository.listSubmittedByTestId(testId)) {
+            Map<Long, AnswerAttempt> existing = new HashMap<>();
+            for (AnswerAttempt answer : answerAttemptRepository.listByAttemptId(attempt.getId())) {
+                existing.put(answer.getQuestion().getId(), answer);
+            }
+            int score = 0;
+            int correct = 0;
+            int incorrect = 0;
+            int unanswered = 0;
+            for (Question question : questions) {
+                AnswerAttempt answer = existing.get(question.getId());
+                if (answer == null) {
+                    answer = new AnswerAttempt();
+                    answer.setAttempt(attempt);
+                    answer.setQuestion(question);
+                    answer.setIsCorrect(false);
+                }
+                if (answer.getSelectedOption() == null) {
+                    unanswered++;
+                    answer.setAwardedScore(BigDecimal.ZERO);
+                } else if (Boolean.TRUE.equals(answer.getIsCorrect())) {
+                    correct++;
+                    int points = question.getScore() == null ? 0 : question.getScore();
+                    score += points;
+                    answer.setAwardedScore(BigDecimal.valueOf(points));
+                } else {
+                    incorrect++;
+                    answer.setAwardedScore(BigDecimal.ZERO);
+                }
+                answerAttemptRepository.save(answer);
+            }
+            attempt.setScore(score);
+            attempt.setCorrectCount(correct);
+            attempt.setIncorrectCount(incorrect);
+            attempt.setUnansweredCount(unanswered);
+            testAttemptRepository.save(attempt);
+        }
     }
 
     /**

@@ -2,6 +2,7 @@ package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
+import cat.udl.eps.softarch.demo.service.EmailVerificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.rest.core.annotation.HandleAfterCreate;
@@ -26,10 +27,13 @@ public class UserEventHandler {
 
     final UserRepository userRepository;
     final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    final EmailVerificationService emailVerificationService;
 
-    public UserEventHandler(UserRepository userRepository, org.springframework.jdbc.core.JdbcTemplate jdbc) {
+    public UserEventHandler(UserRepository userRepository, org.springframework.jdbc.core.JdbcTemplate jdbc,
+                            EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
         this.jdbc = jdbc;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @HandleBeforeCreate
@@ -50,6 +54,8 @@ public class UserEventHandler {
         }
         // Registration always creates students; the role cannot be chosen by the client
         user.setRole(User.Role.STUDENT);
+        // New accounts cannot log in until they open the link sent by email (US-AUT-07)
+        user.setEmailVerified(false);
     }
 
     @HandleBeforeSave
@@ -87,6 +93,7 @@ public class UserEventHandler {
         logger.info("After creating: {}", user.toString());
         user.encodePassword();
         userRepository.save(user);
+        emailVerificationService.sendVerification(user);
     }
 
     @HandleAfterSave

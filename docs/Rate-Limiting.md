@@ -24,6 +24,8 @@ Limits reached inside Spring Data REST (reports) get the same body through
 | `registration` | `POST /users`                      | IP                 | 5     | 3600 s |
 | `recovery`     | `POST /password-reset-*`           | IP                 | 10    | 900 s  |
 | `reports`      | `POST /reports`                    | Authenticated user | 10    | 3600 s |
+| `verification` | `POST /email-verification-requests`, `POST /email-verifications` | IP | 10 | 900 s |
+| `verification-email` | `POST /email-verification-requests` | Email (hashed) | 5 | 900 s |
 
 Failed logins are not limited here: `LoginThrottlingService` (US-AUT-02)
 already locks an account for 15 minutes after 5 consecutive failures. The
@@ -41,6 +43,8 @@ rebuild is needed:
 | `registration` | `RATE_LIMIT_REGISTRATION` | `RATE_LIMIT_REGISTRATION_WINDOW` |
 | `recovery`     | `RATE_LIMIT_RECOVERY`     | `RATE_LIMIT_RECOVERY_WINDOW`     |
 | `reports`      | `RATE_LIMIT_REPORTS`      | `RATE_LIMIT_REPORTS_WINDOW`      |
+| `verification` | `RATE_LIMIT_VERIFICATION` | `RATE_LIMIT_VERIFICATION_WINDOW` |
+| `verification-email` | `RATE_LIMIT_VERIFICATION_EMAIL` | `RATE_LIMIT_VERIFICATION_EMAIL_WINDOW` |
 
 On Fly.io, `fly secrets set RATE_LIMIT_PUBLIC=200` restarts the app with the
 new value. Defaults live in `src/main/resources/application.yml`.

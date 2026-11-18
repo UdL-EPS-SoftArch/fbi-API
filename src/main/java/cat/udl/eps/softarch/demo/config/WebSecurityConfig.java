@@ -59,6 +59,8 @@ public class WebSecurityConfig {
                 .requestMatchers("/password-changes/**").denyAll()
                 .requestMatchers(HttpMethod.POST, "/password-reset-requests", "/password-reset-validations", "/password-reset-confirmations").permitAll()
                 .requestMatchers("/password-reset-requests/**", "/password-reset-validations/**", "/password-reset-confirmations/**").denyAll()
+                .requestMatchers(HttpMethod.POST, "/email-verification-requests", "/email-verifications").permitAll()
+                .requestMatchers("/email-verification-requests/**", "/email-verifications/**").denyAll()
                 .requestMatchers(HttpMethod.GET, "/identity").authenticated()
                 .requestMatchers(HttpMethod.GET, "/users").authenticated()
                 .requestMatchers(HttpMethod.POST, "/users").anonymous()

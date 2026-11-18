@@ -8,6 +8,12 @@ rate-limit:
     registration: { limit: 1000000, window-seconds: 60 }
     recovery:     { limit: 1000000, window-seconds: 60 }
     reports:      { limit: 1000000, window-seconds: 60 }
+    verification: { limit: 1000000, window-seconds: 60 }
+    verification-email: { limit: 1000000, window-seconds: 60 }
+
+# The cleanup is triggered by the tests themselves, never by the scheduler
+email-verification:
+  cleanup-cron: "-"
 
 logging:
     level:

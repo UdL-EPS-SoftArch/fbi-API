@@ -24,7 +24,6 @@ import org.springframework.security.web.header.writers.ClearSiteDataHeaderWriter
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 import cat.udl.eps.softarch.demo.service.SessionService;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -93,8 +92,6 @@ public class WebSecurityConfig {
                     .addLogoutHandler(new HeaderWriterLogoutHandler(
                             new ClearSiteDataHeaderWriter(ClearSiteDataHeaderWriter.Directive.CACHE)))
                     .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)));
-                .realmName(LoginFailureEntryPoint.REALM)
-                .authenticationEntryPoint(loginFailureEntryPoint));
         return http.build();
     }
 

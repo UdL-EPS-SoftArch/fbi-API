@@ -49,6 +49,10 @@ public interface QuestionRepository extends CrudRepository<Question, Long>, Pagi
            "FROM Question q JOIN q.test t LEFT JOIN t.author au WHERE q.id = :id")
     Optional<QuestionSnapshot> findSnapshotById(@Param("id") Long id);
 
+    @RestResource(exported = false)
+    @Query("SELECT COALESCE(MAX(q.orderIndex), -1) FROM Question q WHERE q.test.id = :testId")
+    Integer maxOrderIndex(@Param("testId") Long testId);
+
     /** Sum of the question scores of a test: its maximum score (2.4.3). */
     @RestResource(exported = false)
     @Query("SELECT COALESCE(SUM(q.score), 0) FROM Question q WHERE q.test.id = :testId")

@@ -58,6 +58,10 @@ public interface TestAttemptRepository extends CrudRepository<TestAttempt, Long>
            "FROM TestAttempt a LEFT JOIN a.user u LEFT JOIN a.test t WHERE a.id = :id")
     Optional<AttemptSnapshot> findSnapshotById(@Param("id") Long id);
 
+    @RestResource(exported = false)
+    @Query("SELECT a FROM TestAttempt a WHERE a.test.id = :testId AND a.status = 'SUBMITTED'")
+    List<TestAttempt> listSubmittedByTestId(@Param("testId") Long testId);
+
     /** Submitted attempts that count for the rankings, for tests that are currently eligible (2.4.2). */
     @RestResource(exported = false)
     @Query("SELECT a FROM TestAttempt a JOIN FETCH a.user u JOIN FETCH a.test t JOIN FETCH t.subject s " +

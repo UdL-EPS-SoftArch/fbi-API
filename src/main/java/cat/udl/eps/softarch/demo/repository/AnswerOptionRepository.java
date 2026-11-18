@@ -5,6 +5,7 @@ import cat.udl.eps.softarch.demo.domain.Question;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
@@ -34,6 +35,11 @@ public interface AnswerOptionRepository extends CrudRepository<AnswerOption, Lon
 
     @Query("SELECT o FROM AnswerOption o WHERE o.question = :question AND (" + VISIBILITY_CLAUSE + ") ORDER BY o.orderIndex")
     Page<AnswerOption> findByQuestion(@Param("question") Question question, Pageable pageable);
+
+    @RestResource(exported = false)
+    @Modifying(flushAutomatically = true)
+    @Query("DELETE FROM AnswerOption o WHERE o.question.id = :questionId")
+    void deleteForQuestion(@Param("questionId") Long questionId);
 
     /** Values as stored in the database (never the entity merged with the request body). */
     interface OptionSnapshot {

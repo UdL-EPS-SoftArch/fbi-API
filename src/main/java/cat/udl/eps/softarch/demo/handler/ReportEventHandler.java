@@ -3,6 +3,7 @@ package cat.udl.eps.softarch.demo.handler;
 import cat.udl.eps.softarch.demo.domain.Report;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.ReportRepository;
+import cat.udl.eps.softarch.demo.service.RateLimitService;
 import org.springframework.data.rest.core.annotation.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,14 +15,18 @@ import java.time.Instant;
 @RepositoryEventHandler
 public class ReportEventHandler {
     final ReportRepository reportRepository;
+    final RateLimitService rateLimitService;
 
-    public ReportEventHandler(ReportRepository reportRepository) {
+    public ReportEventHandler(ReportRepository reportRepository, RateLimitService rateLimitService) {
         this.reportRepository = reportRepository;
+        this.rateLimitService = rateLimitService;
     }
 
     @HandleBeforeCreate
     public void handleReportPreCreate(Report report) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        // Limited per account here, where the reporter is already authenticated.
+        rateLimitService.consume("reports", user.getUsername());
         report.setReporter(user);
         report.setStatus(Report.Status.PENDING);
     }

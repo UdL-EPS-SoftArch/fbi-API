@@ -19,12 +19,12 @@ Official test attempts can contribute to subject and global leaderboards using e
 
 The roles are hierarchical: students can use public visitor features, and administrators can also use student features, subject to competitive restrictions.
 
-| Visitor | Student | Administrator |
-| --- | --- | --- |
-| Browse subjects and published public tests; search or filter the catalog and view public test details | Take official and custom tests; review scores, correct answers, mistakes and test history | Manage subjects and create, edit, publish, withdraw and validate official tests, questions and answer options |
-| View featured tests, public profiles, and subject and global leaderboards | Participate in subject and global leaderboards through eligible official test attempts | Moderate student-created content, review reports and resolve issues |
-| Register, log in and recover a forgotten password | Create, publish and manage custom practice tests | Monitor statistics and manage leaderboards for justified administrative reasons |
-| | Earn badges, manage profile information, and report content or platform problems | Use student features for validation and practice; administrator attempts do not count toward leaderboards and administrators cannot earn student badges |
+| Visitor                                                                                               | Student                                                                                   | Administrator                                                                                                                                           |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Browse subjects and published public tests; search or filter the catalog and view public test details | Take official and custom tests; review scores, correct answers, mistakes and test history | Manage subjects and create, edit, publish, withdraw and validate official tests, questions and answer options                                           |
+| View featured tests, public profiles, and subject and global leaderboards                             | Participate in subject and global leaderboards through eligible official test attempts    | Moderate student-created content, review reports and resolve issues                                                                                     |
+| Register, log in and recover a forgotten password                                                     | Create, publish and manage custom practice tests                                          | Monitor statistics and manage leaderboards for justified administrative reasons                                                                         |
+|                                                                                                       | Earn badges, manage profile information, and report content or platform problems          | Use student features for validation and practice; administrator attempts do not count toward leaderboards and administrators cannot earn student badges |
 
 ## Entities Model
 
@@ -39,6 +39,8 @@ classDiagram
         +string username UK
         +string full_name
         +string role
+        +boolean email_verified
+        +boolean suspended
         +datetime created_at_utc
         +datetime updated_at_utc
     }
@@ -189,12 +191,14 @@ classDiagram
 The API is developed using **AI-Assisted Spec-Driven Development (SDD)** with **Spring Data REST** and **Cucumber BDD**.
 
 It is pre-configured with agent skills (`skills/`), repository instructions (`AGENTS.md`, `CONVENTIONS.md`), and Aider configuration (`.aider.conf.yml`) to support both:
+
 1. **Full-Capability AI Agents** (OpenCode, Claude Code, Cursor, GitHub Copilot, Windsurf).
 2. **Token-Constrained APIs** (Aider paired with Groq free tier - 8K token limits).
 
 For complete stage-by-stage instructions and command workflows, see **[AI_DEVELOPMENT_GUIDE.md](AI_DEVELOPMENT_GUIDE.md)**.
 
 ### SDD Agent Skills (`skills/`)
+
 - **`skills/sdd-feature-designer/SKILL.md`**: Draft Cucumber `.feature` specs for Spring Data REST endpoints (<50 lines).
 - **`skills/sdd-cucumber-steps/SKILL.md`**: Implement MockMvc step definition classes extending `StepDefs.java`.
 - **`skills/spring-datarest-entity/SKILL.md`**: Create JPA `@Entity` classes extending `UriEntity` and `@RepositoryRestResource` interfaces with SpEL row-level security queries.

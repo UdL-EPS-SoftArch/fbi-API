@@ -3,6 +3,7 @@ package cat.udl.eps.softarch.demo.config;
 import java.util.Arrays;
 import java.util.List;
 
+import cat.udl.eps.softarch.demo.service.RateLimitService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,7 @@ import org.springframework.security.data.repository.query.SecurityEvaluationCont
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -27,7 +29,7 @@ public class WebSecurityConfig {
     String[] allowedOrigins;
 
     @Bean
-    protected SecurityFilterChain securityFilterChain(HttpSecurity http, PlatformTransactionManager transactionManager) throws Exception {
+    protected SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitService rateLimitService, LoginFailureEntryPoint loginFailureEntryPoint, PlatformTransactionManager transactionManager) throws Exception {
         String[] publicReads = {
                 "/", "/profile", "/profile/**",
                 "/subjects", "/subjects/*", "/subjects/search/findByName", "/subjects/search/findByNameContainingIgnoreCase",
@@ -61,7 +63,12 @@ public class WebSecurityConfig {
             .csrf((csrf) -> csrf.disable())
             .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors((cors) -> cors.configurationSource(corsConfigurationSource()))
-            .httpBasic((httpBasic) -> httpBasic.realmName("demo"));
+
+            // After CORS, so a 429 still carries CORS headers; before Basic auth, so blocked requests skip the password check.
+            .addFilterBefore(new RateLimitFilter(rateLimitService), BasicAuthenticationFilter.class)
+            .httpBasic((httpBasic) -> httpBasic
+                .realmName(LoginFailureEntryPoint.REALM)
+                .authenticationEntryPoint(loginFailureEntryPoint));
         return http.build();
     }
 

@@ -1,7 +1,6 @@
 package cat.udl.eps.softarch.demo.steps;
 
 import static org.hamcrest.Matchers.not;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -60,19 +59,6 @@ public class RateLimitStepDefs {
                     .with(AuthenticationStepDefs.authenticate()));
             if (i < times - 1) {
                 stepDefs.result.andExpect(status().is(not(TOO_MANY_REQUESTS)));
-            }
-        }
-    }
-
-    // Always sends a wrong password, whatever credentials the scenario has stored.
-    @When("I fail to login as {string} {int} times")
-    public void failToLogin(String username, int times) throws Exception {
-        for (int i = 0; i < times; i++) {
-            stepDefs.result = stepDefs.mockMvc.perform(get("/identity")
-                    .accept(MediaType.APPLICATION_JSON)
-                    .with(httpBasic(username, "wrong-password")));
-            if (i < times - 1) {
-                stepDefs.result.andExpect(status().isUnauthorized());
             }
         }
     }

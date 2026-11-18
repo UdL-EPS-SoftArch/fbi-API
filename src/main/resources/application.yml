@@ -14,7 +14,6 @@ spring:
 rate-limit:
   rules:
     public:       { limit: "${RATE_LIMIT_PUBLIC:120}",       window-seconds: "${RATE_LIMIT_PUBLIC_WINDOW:60}" }
-    login:        { limit: "${RATE_LIMIT_LOGIN:10}",         window-seconds: "${RATE_LIMIT_LOGIN_WINDOW:900}" }
     registration: { limit: "${RATE_LIMIT_REGISTRATION:5}",   window-seconds: "${RATE_LIMIT_REGISTRATION_WINDOW:3600}" }
     recovery:     { limit: "${RATE_LIMIT_RECOVERY:10}",      window-seconds: "${RATE_LIMIT_RECOVERY_WINDOW:900}" }
     reports:      { limit: "${RATE_LIMIT_REPORTS:10}",       window-seconds: "${RATE_LIMIT_REPORTS_WINDOW:3600}" }

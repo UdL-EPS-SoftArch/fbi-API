@@ -61,7 +61,7 @@ public class WebSecurityConfig {
             .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors((cors) -> cors.configurationSource(corsConfigurationSource()))
 
-            // After CORS, so a 429 still carries CORS headers; before Basic auth, so blocked logins skip the password check.
+            // After CORS, so a 429 still carries CORS headers; before Basic auth, so blocked requests skip the password check.
             .addFilterBefore(new RateLimitFilter(rateLimitService), BasicAuthenticationFilter.class)
             .httpBasic((httpBasic) -> httpBasic
                 .realmName(LoginFailureEntryPoint.REALM)

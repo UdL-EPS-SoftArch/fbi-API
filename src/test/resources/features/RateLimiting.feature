@@ -26,7 +26,6 @@ Feature: Rate limit public and sensitive requests
 
   Scenario: A normal user never reaches the limits
     Given The "public" rate limit is 120 requests per 60 seconds
-    And The "login" rate limit is 3 requests per 900 seconds
     And I login as "demo" with password "password"
     When I request "/subjects" 20 times
     Then The response code is 200
@@ -41,13 +40,6 @@ Feature: Rate limit public and sensitive requests
     When I register a new user with username "ratelimit3", email "ratelimit3@sample.app" and password "password"
     Then The response code is 429
     And The response has a Retry-After of 3600 seconds
-
-  Scenario: Repeated failed logins are blocked only for that account
-    Given There is a registered user with username "ratelimituser" and password "password" and email "ratelimituser@sample.app"
-    And The "login" rate limit is 3 requests per 900 seconds
-    When I fail to login as "ratelimituser" 4 times
-    Then The response code is 429
-    And I can login with username "demo" and password "password"
 
   Scenario: Password recovery has a stricter limit
     Given The "recovery" rate limit is 2 requests per 900 seconds

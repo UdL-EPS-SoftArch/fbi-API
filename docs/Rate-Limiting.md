@@ -18,14 +18,14 @@ JSON body:
 | Rule           | Applies to                         | Counted per        | Limit | Window |
 |----------------|------------------------------------|--------------------|-------|--------|
 | `public`       | Every `GET` / `HEAD`               | IP                 | 120   | 60 s   |
-| `login`        | Failed HTTP Basic logins (`401`)   | IP + username      | 10    | 900 s  |
 | `registration` | `POST /users`                      | IP                 | 5     | 3600 s |
 | `recovery`     | `POST /password-reset-*`           | IP                 | 10    | 900 s  |
 | `reports`      | `POST /reports`                    | Authenticated user | 10    | 3600 s |
 
-Only failed logins count, so a logged-in user sending credentials on every
-request is never blocked. The existing per-email limit on password recovery
-(5 per 15 min) still applies on top of the per-IP one.
+Failed logins are not limited here: `LoginThrottlingService` (US-AUT-02)
+already locks an account for 15 minutes after 5 consecutive failures. The
+existing per-email limit on password recovery (5 per 15 min) still applies on
+top of the per-IP one.
 
 ## Changing the limits without redeploying
 
@@ -35,7 +35,6 @@ rebuild is needed:
 | Rule           | Limit variable            | Window variable                  |
 |----------------|---------------------------|----------------------------------|
 | `public`       | `RATE_LIMIT_PUBLIC`       | `RATE_LIMIT_PUBLIC_WINDOW`       |
-| `login`        | `RATE_LIMIT_LOGIN`        | `RATE_LIMIT_LOGIN_WINDOW`        |
 | `registration` | `RATE_LIMIT_REGISTRATION` | `RATE_LIMIT_REGISTRATION_WINDOW` |
 | `recovery`     | `RATE_LIMIT_RECOVERY`     | `RATE_LIMIT_RECOVERY_WINDOW`     |
 | `reports`      | `RATE_LIMIT_REPORTS`      | `RATE_LIMIT_REPORTS_WINDOW`      |
@@ -47,7 +46,7 @@ new value. Defaults live in `src/main/resources/application.yml`.
 
 - `RateLimitFilter` runs inside the Spring Security chain, after CORS (so a
   429 still carries CORS headers) and before Basic authentication (so blocked
-  logins never reach the password check).
+  requests never reach the password check).
 - Reports are limited in `ReportEventHandler`, where the reporter is
   authenticated.
 - `RateLimitService` keeps one `RateLimit` row per key in fixed windows,

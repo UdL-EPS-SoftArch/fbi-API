@@ -37,20 +37,6 @@ public class RateLimitService {
 
     /** Counts one request, or throws if the limit was already reached. */
     public void consume(String rule, String key) {
-        update(rule, key, true, true);
-    }
-
-    /** Throws if the limit is reached, without counting this request. Used before a login attempt. */
-    public void checkNotExhausted(String rule, String key) {
-        update(rule, key, true, false);
-    }
-
-    /** Counts one request without ever throwing. Used after a failed login attempt. */
-    public void recordAttempt(String rule, String key) {
-        update(rule, key, false, true);
-    }
-
-    private void update(String rule, String key, boolean enforce, boolean count) {
         RateLimitProperties.Rule limits = properties.getRules().get(rule);
         if (limits == null) {
             return;
@@ -62,13 +48,11 @@ public class RateLimitService {
         transaction.executeWithoutResult(status -> {
             RateLimit counter = counters.lockByRateKey(rateKey).orElseThrow();
             counter.resetIfExpired(now, limits.getWindowSeconds());
-            if (enforce && counter.isExhausted(limits.getLimit())) {
+            if (counter.isExhausted(limits.getLimit())) {
                 throw new RateLimitExceededException(counter.secondsUntilReset(now, limits.getWindowSeconds()));
             }
-            if (count) {
-                counter.increment();
-                counters.save(counter);
-            }
+            counter.increment();
+            counters.save(counter);
         });
     }
 

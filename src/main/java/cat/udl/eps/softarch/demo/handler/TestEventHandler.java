@@ -1,26 +1,35 @@
 package cat.udl.eps.softarch.demo.handler;
 
-import cat.udl.eps.softarch.demo.domain.Test;
-import cat.udl.eps.softarch.demo.domain.User;
-import cat.udl.eps.softarch.demo.repository.TestRepository;
-import cat.udl.eps.softarch.demo.service.LeaderboardService;
-import org.springframework.data.rest.core.annotation.*;
+import java.time.Instant;
+
+import org.springframework.data.rest.core.annotation.HandleAfterSave;
+import org.springframework.data.rest.core.annotation.HandleBeforeCreate;
+import org.springframework.data.rest.core.annotation.HandleBeforeDelete;
+import org.springframework.data.rest.core.annotation.HandleBeforeSave;
+import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
+import cat.udl.eps.softarch.demo.domain.Test;
+import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.repository.TestRepository;
+import cat.udl.eps.softarch.demo.service.LeaderboardService;
+import cat.udl.eps.softarch.demo.service.TestContentService;
 
 @Component
 @RepositoryEventHandler
 public class TestEventHandler {
     final TestRepository testRepository;
     final LeaderboardService leaderboardService;
+    final TestContentService testContentService;
 
-    public TestEventHandler(TestRepository testRepository, LeaderboardService leaderboardService) {
+    public TestEventHandler(TestRepository testRepository, LeaderboardService leaderboardService,
+                            TestContentService testContentService) {
         this.testRepository = testRepository;
         this.leaderboardService = leaderboardService;
+        this.testContentService = testContentService;
     }
 
     @HandleBeforeCreate
@@ -31,6 +40,11 @@ public class TestEventHandler {
         // An archived subject keeps its tests, but no new ones can be added to it
         if (test.getSubject() != null && !test.getSubject().isActive()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Tests cannot be created in an archived subject");
+        }
+        testContentService.checkVisibility(test);
+        // A new test has no questions yet, so it can only be published once they are added
+        if (test.getStatus() == Test.Status.PUBLISHED) {
+            testContentService.checkPublishable(test);
         }
         setPublishedAt(test);
     }
@@ -61,6 +75,11 @@ public class TestEventHandler {
             }
         }
         checkOfficialByAdmin(test, user);
+        testContentService.checkVisibility(test);
+        // Validated when the test becomes published (first publication or republication)
+        if (test.getStatus() == Test.Status.PUBLISHED && stored.getStatus() != Test.Status.PUBLISHED) {
+            testContentService.checkPublishable(test);
+        }
         setPublishedAt(test);
     }
 

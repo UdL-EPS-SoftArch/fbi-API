@@ -15,9 +15,10 @@ public class BasicUserDetailsService implements UserDetailsService {
     this.userRepository = userRepository;
   }
 
+  // The login identifier can be the email or the username (US-AUT-02)
   @Override
-  public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    return userRepository.findByUsername(username)
-        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+  public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
+    return userRepository.findByLoginIdentifier(identifier)
+        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + identifier));
   }
 }

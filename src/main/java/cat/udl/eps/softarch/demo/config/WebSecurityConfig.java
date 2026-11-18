@@ -27,7 +27,7 @@ public class WebSecurityConfig {
     String[] allowedOrigins;
 
     @Bean
-    protected SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitService rateLimitService) throws Exception {
+    protected SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitService rateLimitService, LoginFailureEntryPoint loginFailureEntryPoint) throws Exception {
         String[] publicReads = {
                 "/", "/profile", "/profile/**",
                 "/subjects", "/subjects/*", "/subjects/search/findByName", "/subjects/search/findByNameContainingIgnoreCase",
@@ -60,9 +60,12 @@ public class WebSecurityConfig {
             .csrf((csrf) -> csrf.disable())
             .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors((cors) -> cors.configurationSource(corsConfigurationSource()))
+
             // After CORS, so a 429 still carries CORS headers; before Basic auth, so blocked logins skip the password check.
             .addFilterBefore(new RateLimitFilter(rateLimitService), BasicAuthenticationFilter.class)
-            .httpBasic((httpBasic) -> httpBasic.realmName("demo"));
+            .httpBasic((httpBasic) -> httpBasic
+                .realmName(LoginFailureEntryPoint.REALM)
+                .authenticationEntryPoint(loginFailureEntryPoint));
         return http.build();
     }
 

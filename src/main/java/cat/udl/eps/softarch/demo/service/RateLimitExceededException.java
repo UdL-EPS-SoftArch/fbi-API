@@ -8,6 +8,10 @@ import org.springframework.web.server.ResponseStatusException;
 /** 429 Too Many Requests carrying how long the client must wait, sent as Retry-After. */
 @Getter
 public class RateLimitExceededException extends ResponseStatusException {
+    // Same body shape as the login errors (LoginFailureEntryPoint): status, code and message.
+    public static final String CODE = "TOO_MANY_REQUESTS";
+    public static final String MESSAGE = "Too many requests, please try again later";
+
     private final long retryAfterSeconds;
 
     public RateLimitExceededException(long retryAfterSeconds) {

@@ -59,7 +59,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
         response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds));
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.getWriter().write("{\"status\":429,\"error\":\"Too Many Requests\",\"retryAfterSeconds\":"
-                + retryAfterSeconds + "}");
+        // Fixed code and message without quotes or backslashes: no JSON escaping needed
+        response.getWriter().write("{\"status\":429,\"code\":\"" + RateLimitExceededException.CODE
+                + "\",\"message\":\"" + RateLimitExceededException.MESSAGE + "\"}");
     }
 }

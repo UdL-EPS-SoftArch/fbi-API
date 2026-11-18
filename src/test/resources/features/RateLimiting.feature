@@ -12,6 +12,8 @@ Feature: Rate limit public and sensitive requests
     When I request "/subjects" 4 times
     Then The response code is 429
     And The response has a Retry-After of 60 seconds
+    And The error code is "TOO_MANY_REQUESTS"
+    And The error message is "Too many requests"
     When The recovery clock advances by 60 seconds
     And I request "/subjects" 1 time
     Then The response code is 200
@@ -51,6 +53,8 @@ Feature: Rate limit public and sensitive requests
     And I login as "demo" with password "password"
     When I submit 3 reports
     Then The response code is 429
+    And The response has a Retry-After of 3600 seconds
+    And The error code is "TOO_MANY_REQUESTS"
     When I login as "admin" with password "password"
     And I submit 1 report
     Then The response code is 201

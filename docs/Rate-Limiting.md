@@ -3,11 +3,14 @@
 Public and sensitive endpoints are rate limited to prevent large-scale data
 extraction and abuse. A client that exceeds a limit receives
 `429 Too Many Requests` with a `Retry-After` header (seconds to wait) and a
-JSON body:
+JSON body with the same shape as the login errors (`LoginFailureEntryPoint`):
 
 ```json
-{"status":429,"error":"Too Many Requests","retryAfterSeconds":60}
+{"status":429,"code":"TOO_MANY_REQUESTS","message":"Too many requests, please try again later"}
 ```
+
+Limits reached inside Spring Data REST (reports) get the same body through
+`RateLimitExceptionAdvice`.
 
 ## Limits
 

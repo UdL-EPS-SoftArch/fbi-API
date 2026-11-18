@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import cat.udl.eps.softarch.demo.config.RateLimitProperties;
@@ -80,5 +81,10 @@ public class RateLimitStepDefs {
     @Then("The response has a Retry-After of {int} seconds")
     public void checkRetryAfter(int seconds) throws Exception {
         stepDefs.result.andExpect(header().string("Retry-After", String.valueOf(seconds)));
+    }
+
+    @Then("The error code is {string}")
+    public void checkErrorCode(String code) throws Exception {
+        stepDefs.result.andExpect(jsonPath("$.code").value(code));
     }
 }

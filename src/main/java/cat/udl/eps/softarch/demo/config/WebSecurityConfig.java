@@ -3,6 +3,7 @@ package cat.udl.eps.softarch.demo.config;
 import java.util.Arrays;
 import java.util.List;
 
+import cat.udl.eps.softarch.demo.service.RateLimitService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,7 @@ import org.springframework.security.web.header.writers.ClearSiteDataHeaderWriter
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 import cat.udl.eps.softarch.demo.service.SessionService;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -37,6 +39,7 @@ public class WebSecurityConfig {
                                                       LoginFailureEntryPoint loginFailureEntryPoint,
                                                       SessionService sessionService,
                                                       SessionTokenLogoutHandler sessionTokenLogoutHandler) throws Exception {
+    protected SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitService rateLimitService, LoginFailureEntryPoint loginFailureEntryPoint) throws Exception {
         String[] publicReads = {
                 "/", "/profile", "/profile/**",
                 "/subjects", "/subjects/*", "/subjects/search/findByName", "/subjects/search/findByNameContainingIgnoreCase",
@@ -69,6 +72,9 @@ public class WebSecurityConfig {
             .csrf((csrf) -> csrf.disable())
             .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors((cors) -> cors.configurationSource(corsConfigurationSource()))
+
+            // After CORS, so a 429 still carries CORS headers; before Basic auth, so blocked requests skip the password check.
+            .addFilterBefore(new RateLimitFilter(rateLimitService), BasicAuthenticationFilter.class)
             .httpBasic((httpBasic) -> httpBasic
                     .realmName(LoginFailureEntryPoint.REALM)
                     .authenticationEntryPoint(loginFailureEntryPoint))
@@ -82,6 +88,8 @@ public class WebSecurityConfig {
                     .addLogoutHandler(new HeaderWriterLogoutHandler(
                             new ClearSiteDataHeaderWriter(ClearSiteDataHeaderWriter.Directive.CACHE)))
                     .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)));
+                .realmName(LoginFailureEntryPoint.REALM)
+                .authenticationEntryPoint(loginFailureEntryPoint));
         return http.build();
     }
 

@@ -57,21 +57,32 @@ Feature: Define the correct answer
     Then The response code is 200
     And The retrieved option is shown as correct
 
-  Scenario Outline: Students and visitors never see the correct option
+  Scenario Outline: Students never see the correct option
     Given I login as "demo" with password "password"
     And I have a draft "CUSTOM" test "Practice SQL" in subject "Databases"
     And I add a question to test "Practice SQL" worth 1 points with 2 options, 1 of them correct
     And I publish the test "Practice SQL" with public visibility "true"
-    And <login>
+    And I login as "student" with password "password"
     When I retrieve option 1 of question 1 of test "Practice SQL" <view>
     Then The response code is 200
     And The retrieved option does not reveal whether it is correct
     Examples:
-      | login                                          | view                |
-      | I login as "student" with password "password" | without answer key  |
-      | I login as "student" with password "password" | with the answer key |
-      | I'm not logged in                              | without answer key  |
-      | I'm not logged in                              | with the answer key |
+      | view                |
+      | without answer key  |
+      | with the answer key |
+
+  Scenario Outline: Visitors cannot read answer options
+    Given I login as "demo" with password "password"
+    And I have a draft "CUSTOM" test "Practice SQL" in subject "Databases"
+    And I add a question to test "Practice SQL" worth 1 points with 2 options, 1 of them correct
+    And I publish the test "Practice SQL" with public visibility "true"
+    And I'm not logged in
+    When I retrieve option 1 of question 1 of test "Practice SQL" <view>
+    Then The response code is 401
+    Examples:
+      | view                |
+      | without answer key  |
+      | with the answer key |
 
   Scenario Outline: Only the author or an administrator can mark the correct option
     Given I login as "demo" with password "password"

@@ -81,13 +81,16 @@ public class DefineCorrectAnswerStepDefs {
 
     @Then("Only option {int} of question {int} of test {string} is correct")
     public void onlyOptionIsCorrect(int option, int question, String title) {
-        List<Long> ids = optionIds(findQuestion(title, question));
-        List<Long> correct = jdbc.queryForList(
-                "SELECT id FROM answer_option WHERE question_id = ? AND is_correct = TRUE ORDER BY order_index, id",
-                Long.class, findQuestion(title, question).getId());
+        Question target = findQuestion(title, question);
+        List<Long> ids = optionIds(target);
+        // Positions (1-based) of the options marked as correct, so the message matches the step
+        List<Integer> correct = jdbc.queryForList(
+                        "SELECT id FROM answer_option WHERE question_id = ? AND is_correct = TRUE ORDER BY order_index, id",
+                        Long.class, target.getId())
+                .stream().map(id -> ids.indexOf(id) + 1).toList();
 
-        assertEquals(List.of(ids.get(option - 1)), correct,
-                "Expected only option " + option + " of question " + question + " to be marked as correct");
+        assertEquals(List.of(option), correct,
+                "Expected only option " + option + " of question " + question + " to be correct, but the correct options were " + correct);
     }
 
     @Then("The retrieved option is shown as correct")

@@ -38,6 +38,25 @@ public class AnswerOptionEventHandler {
         checkTargetQuestion(option.getQuestion(), user);
     }
 
+    // A question has a single correct answer: marking an option unmarks the previous one.
+    // It runs after saving because a new option has no id before (QuestionTransactionFilter
+    // keeps both writes in the request transaction).
+    @HandleAfterCreate
+    public void handleAnswerOptionPostCreate(AnswerOption option) {
+        unmarkOtherCorrectOptions(option);
+    }
+
+    @HandleAfterSave
+    public void handleAnswerOptionPostSave(AnswerOption option) {
+        unmarkOtherCorrectOptions(option);
+    }
+
+    private void unmarkOtherCorrectOptions(AnswerOption option) {
+        if (Boolean.TRUE.equals(option.getIsCorrect()) && option.getQuestion() != null) {
+            answerOptionRepository.unmarkOtherCorrectOptions(option.getQuestion().getId(), option.getId());
+        }
+    }
+
     @HandleBeforeDelete
     public void handleAnswerOptionPreDelete(AnswerOption option) {
         checkTargetQuestion(option.getQuestion(), CurrentUser.get());

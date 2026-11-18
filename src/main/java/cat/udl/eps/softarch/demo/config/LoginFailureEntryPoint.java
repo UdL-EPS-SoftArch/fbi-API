@@ -1,6 +1,7 @@
 package cat.udl.eps.softarch.demo.config;
 
 import cat.udl.eps.softarch.demo.service.LoginThrottledException;
+import cat.udl.eps.softarch.demo.service.SessionExpiredException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
@@ -43,6 +44,10 @@ public class LoginFailureEntryPoint implements AuthenticationEntryPoint {
             response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(seconds));
             write(response, HttpStatus.TOO_MANY_REQUESTS, "TOO_MANY_LOGIN_ATTEMPTS",
                     "Too many failed login attempts, please try again in a few minutes");
+        } else if (exception instanceof SessionExpiredException) {
+            response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer realm=\"" + REALM + "\"");
+            write(response, HttpStatus.UNAUTHORIZED, "SESSION_EXPIRED",
+                    "Your session has ended, please log in again");
         } else if (exception instanceof LockedException) {
             write(response, HttpStatus.FORBIDDEN, "ACCOUNT_SUSPENDED",
                     "Your account is suspended, contact the administrators for more information");

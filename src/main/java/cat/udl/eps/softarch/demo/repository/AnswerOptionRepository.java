@@ -62,6 +62,9 @@ public interface AnswerOptionRepository extends CrudRepository<AnswerOption, Lon
            "FROM AnswerOption o JOIN o.question q JOIN q.test t LEFT JOIN t.author au WHERE o.id = :id")
     Optional<OptionSnapshot> findSnapshotById(@Param("id") Long id);
 
+    @RestResource(exported = false)
+    boolean existsByIdAndQuestionId(Long id, Long questionId);
+
     /** Correct options of every question of a test, without visibility filters (server-side grading). */
     @RestResource(exported = false)
     @Query("SELECT o FROM AnswerOption o JOIN FETCH o.question q WHERE q.test.id = :testId AND o.isCorrect = true")

@@ -41,6 +41,14 @@ public interface AnswerOptionRepository extends CrudRepository<AnswerOption, Lon
     @Query("DELETE FROM AnswerOption o WHERE o.question.id = :questionId")
     void deleteForQuestion(@Param("questionId") Long questionId);
 
+    /** Unmarks every other correct option of the question, so it keeps a single correct answer (US-EST-18). */
+    @RestResource(exported = false)
+    @Transactional
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE AnswerOption o SET o.isCorrect = false " +
+           "WHERE o.question.id = :questionId AND o.id <> :keepId AND o.isCorrect = true")
+    void unmarkOtherCorrectOptions(@Param("questionId") Long questionId, @Param("keepId") Long keepId);
+
     /** Values as stored in the database (never the entity merged with the request body). */
     interface OptionSnapshot {
         Long getQuestionId();

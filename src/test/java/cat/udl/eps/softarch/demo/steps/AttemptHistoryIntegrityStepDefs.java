@@ -101,6 +101,15 @@ public class AttemptHistoryIntegrityStepDefs {
         assertTrue(answerAttemptRepository.existsById(answer.getId()), "The answer should still exist");
     }
 
+    // Shared with EnforcePermissionsStepDefs ("that attempt", "its answer")
+    TestAttempt getAttempt() {
+        return attempt;
+    }
+
+    AnswerAttempt getAnswer() {
+        return answer;
+    }
+
     private void performDelete(String uri) throws Throwable {
         stepDefs.result = stepDefs.mockMvc.perform(
                 delete(uri)

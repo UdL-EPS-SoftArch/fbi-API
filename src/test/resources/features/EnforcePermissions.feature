@@ -22,33 +22,33 @@ Feature: Enforce permissions on the server
     When I retrieve the "<resource>" of that attempt
     Then The response code is <status>
     Examples:
-      | user  | resource | status |
-      | demo  | attempt  | 200    |
-      | alice | attempt  | 404    |
-      | admin | attempt  | 200    |
-      | demo  | answer   | 200    |
-      | alice | answer   | 404    |
-      | admin | answer   | 200    |
+      | user                | resource | status |
+      | demo                | attempt  | 200    |
+      | marquinhos_malote69 | attempt  | 404    |
+      | admin               | attempt  | 200    |
+      | demo                | answer   | 200    |
+      | marquinhos_malote69 | answer   | 404    |
+      | admin               | answer   | 200    |
 
   Scenario Outline: The owner of an attempt cannot be reassigned
     Given I login as "<user>" with password "password"
-    When I link the user of that attempt to "alice"
+    When I link the user of that attempt to "marquinhos_malote69"
     Then The response code is 403
     Examples:
-      | user  |
-      | demo  |
-      | alice |
-      | admin |
+      | user                |
+      | demo                |
+      | marquinhos_malote69 |
+      | admin               |
 
   Scenario Outline: The author of a test cannot be reassigned
     Given I login as "<user>" with password "password"
-    When I link the author of test "Exam 2024" to "alice"
+    When I link the author of test "Exam 2024" to "marquinhos_malote69"
     Then The response code is 403
     Examples:
-      | user  |
-      | demo  |
-      | alice |
-      | admin |
+      | user                |
+      | demo                |
+      | marquinhos_malote69 |
+      | admin               |
 
   Scenario: A student cannot set their own score
     Given I login as "demo" with password "password"
@@ -70,7 +70,7 @@ Feature: Enforce permissions on the server
     When I change the title of test "Exam 2024" to "Hacked"
     Then The response code is <status>
     Examples:
-      | user  | status |
-      | demo  | 403    |
-      | alice | 403    |
-      | admin | 200    |
+      | user                | status |
+      | demo                | 403    |
+      | marquinhos_malote69 | 403    |
+      | admin               | 200    |

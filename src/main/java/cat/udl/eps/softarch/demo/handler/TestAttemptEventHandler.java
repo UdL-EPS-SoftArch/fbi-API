@@ -110,6 +110,12 @@ public class TestAttemptEventHandler {
         badgeService.evaluate(attempt.getUser());
     }
 
+    @HandleBeforeLinkSave
+    @HandleBeforeLinkDelete
+    public void handleTestAttemptPreLinkChange(TestAttempt attempt, Object linked) {
+        CurrentUser.denyRelationChange();
+    }
+
     // Attempts are the history behind scores, rankings and badges (2.4.5): they are never
     // physically deleted, administrators included. An unfinished attempt can be ABANDONED instead.
     @HandleBeforeDelete

@@ -5,6 +5,8 @@ import java.time.Instant;
 import org.springframework.data.rest.core.annotation.HandleAfterSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeCreate;
 import org.springframework.data.rest.core.annotation.HandleBeforeDelete;
+import org.springframework.data.rest.core.annotation.HandleBeforeLinkDelete;
+import org.springframework.data.rest.core.annotation.HandleBeforeLinkSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeSave;
 import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
 import org.springframework.http.HttpStatus;
@@ -81,6 +83,12 @@ public class TestEventHandler {
             testContentService.checkPublishable(test);
         }
         setPublishedAt(test);
+    }
+
+    @HandleBeforeLinkSave
+    @HandleBeforeLinkDelete
+    public void handleTestPreLinkChange(Test test, Object linked) {
+        CurrentUser.denyRelationChange();
     }
 
     @HandleBeforeDelete

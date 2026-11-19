@@ -82,6 +82,14 @@ public class TestAttempt extends UriEntity<Long> {
         return Boolean.TRUE.equals(questionOrderRecorded) ? questionIds : null;
     }
 
+    @JsonIgnore
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "attempt_question_snapshot", joinColumns = @JoinColumn(name = "attempt_id"))
+    private java.util.Set<AttemptQuestion> gradingQuestions = new java.util.HashSet<>();
+
+    @JsonIgnore
+    private Boolean gradingSnapshotRecorded;
+
     @DateTimeFormat
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Instant startedAt;

@@ -4,6 +4,8 @@ import cat.udl.eps.softarch.demo.domain.AnswerOption;
 import cat.udl.eps.softarch.demo.domain.Question;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.AnswerOptionRepository;
+import cat.udl.eps.softarch.demo.repository.TestRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.data.rest.core.annotation.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
@@ -12,8 +14,12 @@ import org.springframework.stereotype.Component;
 @RepositoryEventHandler
 public class AnswerOptionEventHandler {
     final AnswerOptionRepository answerOptionRepository;
+    final TestRepository tests;
+    final JdbcTemplate jdbc;
 
-    public AnswerOptionEventHandler(AnswerOptionRepository answerOptionRepository) {
+    public AnswerOptionEventHandler(AnswerOptionRepository answerOptionRepository, TestRepository tests, JdbcTemplate jdbc) {
+        this.tests = tests;
+        this.jdbc = jdbc;
         this.answerOptionRepository = answerOptionRepository;
     }
 
@@ -21,6 +27,7 @@ public class AnswerOptionEventHandler {
     public void handleAnswerOptionPreCreate(AnswerOption option) {
         // The question is an existing entity referenced by the request, not modified by it
         checkTargetQuestion(option.getQuestion(), CurrentUser.get());
+        lockTest(option.getQuestion());
     }
 
     @HandleBeforeSave
@@ -36,6 +43,7 @@ public class AnswerOptionEventHandler {
             throw new AccessDeniedException("Only the test author can manage its answer options");
         }
         checkTargetQuestion(option.getQuestion(), user);
+        lockTest(option.getQuestion());
     }
 
     // A question has a single correct answer: marking an option unmarks the previous one.
@@ -60,6 +68,17 @@ public class AnswerOptionEventHandler {
     @HandleBeforeDelete
     public void handleAnswerOptionPreDelete(AnswerOption option) {
         checkTargetQuestion(option.getQuestion(), CurrentUser.get());
+        lockTest(option.getQuestion());
+        jdbc.update("UPDATE attempt_question_snapshot SET selected_option_id = ? WHERE question_id = ? " +
+                "AND attempt_id IN (SELECT attempt_id FROM answer_attempt WHERE selected_option_id = ?)",
+                option.getId(), option.getQuestion().getId(), option.getId());
+        jdbc.update("UPDATE answer_attempt SET selected_option_id = NULL WHERE selected_option_id = ?", option.getId());
+    }
+
+    private void lockTest(Question question) {
+        if (question != null && question.getTest() != null) {
+            tests.lockForContentChange(question.getTest().getId()).orElseThrow();
+        }
     }
 
     private void checkTargetQuestion(Question question, User user) {

@@ -160,4 +160,4 @@ Feature: Discover home page content through the API
     And I'm not logged in
     When I request the home resource "/leaderboards?projection=leaderboardSummary"
     Then The response code is 200
-    And the leaderboard projection does not expose an administrator username
+    And the home collection "leaderboards" is empty

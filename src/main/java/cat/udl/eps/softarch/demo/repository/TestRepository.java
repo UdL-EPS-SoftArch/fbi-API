@@ -48,6 +48,44 @@ public interface TestRepository extends CrudRepository<Test, Long>, PagingAndSor
     @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :text, '%')) AND (" + VISIBILITY_CLAUSE + ")")
     Page<Test> findByTitleContaining(@Param("text") String text, Pageable pageable);
 
+    /*
+     * Catalog search (US-COM-04): published public tests only. Every filter is optional and they
+     * are combined with AND; a test matches the tag filter if it has ANY of the selected tags.
+     * The keyword is compared without case or accents (see SearchText).
+     */
+    String CATALOG_FILTERS =
+        "t.status = 'PUBLISHED' AND t.isPublic = true " +
+        "AND t.searchTitle LIKE CONCAT('%', :#{T(cat.udl.eps.softarch.demo.domain.SearchText).normalize(#text)}, '%') " +
+        "AND (:subject IS NULL OR t.subject = :subject) " +
+        "AND (:type IS NULL OR t.testType = :type) " +
+        "AND (:difficulty IS NULL OR t.difficulty = :difficulty) " +
+        "AND (:#{T(cat.udl.eps.softarch.demo.domain.SearchText).hasTags(#tags)} = false " +
+        "     OR EXISTS (SELECT 1 FROM Test tagged JOIN tagged.tags tag WHERE tagged = t " +
+        "                AND tag IN :#{T(cat.udl.eps.softarch.demo.domain.SearchText).tagFilter(#tags)}))";
+
+    /** Sorted with the usual "sort" parameter, e.g. sort=publishedAt,desc or sort=title. */
+    @RestResource(path = "catalog", rel = "catalog")
+    @Query(value = "SELECT t FROM Test t WHERE " + CATALOG_FILTERS,
+           countQuery = "SELECT COUNT(t) FROM Test t WHERE " + CATALOG_FILTERS)
+    Page<Test> searchCatalog(@Param("text") String text, @Param("subject") Subject subject,
+                             @Param("type") Test.TestType type, @Param("difficulty") Test.Difficulty difficulty,
+                             @Param("tags") List<String> tags, Pageable pageable);
+
+    /** Most popular first: number of completed (submitted) regular attempts, descending. */
+    @RestResource(path = "catalogByPopularity", rel = "catalogByPopularity")
+    @Query(value = "SELECT t FROM Test t LEFT JOIN TestAttempt a " +
+                   "ON a.test = t AND a.status = 'SUBMITTED' AND a.attemptType = 'REGULAR' " +
+                   "WHERE " + CATALOG_FILTERS + " GROUP BY t ORDER BY COUNT(a) DESC, t.id ASC",
+           countQuery = "SELECT COUNT(t) FROM Test t WHERE " + CATALOG_FILTERS)
+    Page<Test> searchCatalogByPopularity(@Param("text") String text, @Param("subject") Subject subject,
+                                         @Param("type") Test.TestType type,
+                                         @Param("difficulty") Test.Difficulty difficulty,
+                                         @Param("tags") List<String> tags, Pageable pageable);
+
+    // Tests saved before the search title existed (backfilled at startup); internal use only
+    @RestResource(exported = false)
+    List<Test> findBySearchTitleIsNull();
+
     @RestResource(exported = false)
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT t FROM Test t WHERE t.id = :id")

@@ -6,6 +6,9 @@ import cat.udl.eps.softarch.demo.domain.Question;
 import cat.udl.eps.softarch.demo.domain.TestAttempt;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.AnswerAttemptRepository;
+import cat.udl.eps.softarch.demo.repository.TestRepository;
+import cat.udl.eps.softarch.demo.repository.TestAttemptRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.data.rest.core.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -18,8 +21,14 @@ import java.time.Instant;
 @RepositoryEventHandler
 public class AnswerAttemptEventHandler {
     final AnswerAttemptRepository answerAttemptRepository;
+    final TestRepository tests;
+    final TestAttemptRepository attempts;
+    final JdbcTemplate jdbc;
 
-    public AnswerAttemptEventHandler(AnswerAttemptRepository answerAttemptRepository) {
+    public AnswerAttemptEventHandler(AnswerAttemptRepository answerAttemptRepository, TestRepository tests, TestAttemptRepository attempts, JdbcTemplate jdbc) {
+        this.tests = tests;
+        this.attempts = attempts;
+        this.jdbc = jdbc;
         this.answerAttemptRepository = answerAttemptRepository;
     }
 
@@ -34,8 +43,10 @@ public class AnswerAttemptEventHandler {
         if (!user.getUsername().equals(CurrentUser.usernameOf(attempt.getUser()))) {
             throw new AccessDeniedException("Only the user taking the test can answer it");
         }
-        requireInProgress(attempt.getStatus());
+        tests.lockForContentChange(attempt.getTest().getId()).orElseThrow();
+        requireInProgress(attempts.findSnapshotById(attempt.getId()).orElseThrow().getStatus());
         checkConsistency(answer);
+        recordSelection(answer, answer.getSelectedOption());
         answer.setAnsweredAt(Instant.now());
     }
 
@@ -50,13 +61,15 @@ public class AnswerAttemptEventHandler {
         if (!user.getUsername().equals(stored.getOwnerUsername())) {
             throw new AccessDeniedException("Only the user taking the test can answer it");
         }
-        requireInProgress(stored.getAttemptStatus());
         if (answer.getAttempt() == null || answer.getQuestion() == null
                 || !stored.getAttemptId().equals(answer.getAttempt().getId())
                 || !stored.getQuestionId().equals(answer.getQuestion().getId())) {
             throw new AccessDeniedException("The attempt and the question of an answer cannot be changed");
         }
+        tests.lockForContentChange(answer.getAttempt().getTest().getId()).orElseThrow();
+        requireInProgress(attempts.findSnapshotById(stored.getAttemptId()).orElseThrow().getStatus());
         checkConsistency(answer);
+        recordSelection(answer, answer.getSelectedOption());
         answer.setAnsweredAt(Instant.now());
     }
 
@@ -76,7 +89,14 @@ public class AnswerAttemptEventHandler {
         if (!user.getUsername().equals(stored.getOwnerUsername())) {
             throw new AccessDeniedException("Only the user taking the test can delete its answers");
         }
-        requireInProgress(stored.getAttemptStatus());
+        tests.lockForContentChange(answer.getAttempt().getTest().getId()).orElseThrow();
+        requireInProgress(attempts.findSnapshotById(stored.getAttemptId()).orElseThrow().getStatus());
+        recordSelection(answer, null);
+    }
+
+    private void recordSelection(AnswerAttempt answer, AnswerOption selected) {
+        jdbc.update("UPDATE attempt_question_snapshot SET selected_option_id = ? WHERE attempt_id = ? AND question_id = ?",
+                selected == null ? null : selected.getId(), answer.getAttempt().getId(), answer.getQuestion().getId());
     }
 
     private void requireInProgress(TestAttempt.Status status) {
@@ -93,6 +113,10 @@ public class AnswerAttemptEventHandler {
                 || !question.getTest().getId().equals(attempt.getTest().getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The question does not belong to the attempted test");
+        }
+        if (Boolean.TRUE.equals(attempt.getGradingSnapshotRecorded()) && attempt.getGradingQuestions().stream()
+                .noneMatch(snapshot -> snapshot.getQuestionId().equals(question.getId()))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Question was not part of the attempt");
         }
         AnswerOption selected = answer.getSelectedOption();
         if (selected != null

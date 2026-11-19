@@ -1,18 +1,17 @@
 package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Question;
+import cat.udl.eps.softarch.demo.domain.Test;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.QuestionRepository;
 import cat.udl.eps.softarch.demo.repository.TestRepository;
 import cat.udl.eps.softarch.demo.repository.AnswerOptionRepository;
 import cat.udl.eps.softarch.demo.repository.AnswerAttemptRepository;
 import cat.udl.eps.softarch.demo.repository.ReportRepository;
-import cat.udl.eps.softarch.demo.domain.Test;
-import cat.udl.eps.softarch.demo.service.TestAttemptService;
-import cat.udl.eps.softarch.demo.service.LeaderboardService;
 import cat.udl.eps.softarch.demo.service.TestContentService;
 import org.springframework.data.rest.core.annotation.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -26,21 +25,19 @@ public class QuestionEventHandler {
     final AnswerOptionRepository answerOptions;
     final AnswerAttemptRepository answers;
     final ReportRepository reports;
-    final TestAttemptService attemptService;
-    final LeaderboardService leaderboardService;
+    final JdbcTemplate jdbc;
 
     public QuestionEventHandler(QuestionRepository questionRepository, TestContentService testContentService,
                                 TestRepository testRepository, AnswerOptionRepository answerOptions,
                                 AnswerAttemptRepository answers, ReportRepository reports,
-                                TestAttemptService attemptService, LeaderboardService leaderboardService) {
+                                JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
         this.questionRepository = questionRepository;
         this.testContentService = testContentService;
         this.testRepository = testRepository;
         this.answerOptions = answerOptions;
         this.answers = answers;
         this.reports = reports;
-        this.attemptService = attemptService;
-        this.leaderboardService = leaderboardService;
     }
 
     @HandleBeforeCreate
@@ -87,6 +84,11 @@ public class QuestionEventHandler {
         lockTest(question);
         reports.setTestForQuestion(question.getId(), question.getTest());
         reports.detachQuestion(question.getId());
+        jdbc.update("UPDATE attempt_question_snapshot SET selected_option_id = " +
+                "(SELECT a.selected_option_id FROM answer_attempt a WHERE a.attempt_id = attempt_question_snapshot.attempt_id " +
+                "AND a.question_id = attempt_question_snapshot.question_id) " +
+                "WHERE question_id = ? AND EXISTS (SELECT 1 FROM answer_attempt a " +
+                "WHERE a.attempt_id = attempt_question_snapshot.attempt_id AND a.question_id = attempt_question_snapshot.question_id AND a.selected_option_id IS NOT NULL)", question.getId());
         answers.deleteForQuestion(question.getId());
         answerOptions.deleteForQuestion(question.getId());
     }
@@ -115,10 +117,6 @@ public class QuestionEventHandler {
         if (question.getTest() != null) {
             Long testId = question.getTest().getId();
             testContentService.recalculateMaxScore(testId);
-            attemptService.recalculateSubmittedAttempts(testId);
-            if (question.getTest().getTestType() == Test.TestType.OFFICIAL) {
-                leaderboardService.recalculateAll();
-            }
         }
     }
 

@@ -1,6 +1,7 @@
 package cat.udl.eps.softarch.demo.service;
 
 import cat.udl.eps.softarch.demo.domain.AnswerAttempt;
+import cat.udl.eps.softarch.demo.domain.AttemptQuestion;
 import cat.udl.eps.softarch.demo.domain.AnswerOption;
 import cat.udl.eps.softarch.demo.domain.Question;
 import cat.udl.eps.softarch.demo.domain.Test;
@@ -10,7 +11,6 @@ import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.AnswerAttemptRepository;
 import cat.udl.eps.softarch.demo.repository.AnswerOptionRepository;
 import cat.udl.eps.softarch.demo.repository.QuestionRepository;
-import cat.udl.eps.softarch.demo.repository.TestAttemptRepository;
 import cat.udl.eps.softarch.demo.repository.TestRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
@@ -35,17 +35,15 @@ public class TestAttemptService {
     private final QuestionRepository questionRepository;
     private final AnswerOptionRepository answerOptionRepository;
     private final AnswerAttemptRepository answerAttemptRepository;
-    private final TestAttemptRepository testAttemptRepository;
     private final TestRepository testRepository;
 
     public TestAttemptService(QuestionRepository questionRepository,
                               AnswerOptionRepository answerOptionRepository,
                               AnswerAttemptRepository answerAttemptRepository,
-                              TestAttemptRepository testAttemptRepository, TestRepository testRepository) {
+                              TestRepository testRepository) {
         this.questionRepository = questionRepository;
         this.answerOptionRepository = answerOptionRepository;
         this.answerAttemptRepository = answerAttemptRepository;
-        this.testAttemptRepository = testAttemptRepository;
         this.testRepository = testRepository;
     }
 
@@ -60,52 +58,55 @@ public class TestAttemptService {
         Long testId = attempt.getTest().getId();
         testRepository.lockForContentChange(testId).orElseThrow();
 
-        List<Question> questions = questionRepository.listByTestId(testId);
-
-        // question id -> id of its correct option
-        Map<Long, Long> correctByQuestion = new HashMap<>();
-        for (AnswerOption option : answerOptionRepository.listCorrectByTestId(testId)) {
-            correctByQuestion.putIfAbsent(option.getQuestion().getId(), option.getId());
-        }
-
-        // question id -> answer already stored for this attempt
+        List<Question> currentQuestions = questionRepository.listByTestId(testId);
+        Map<Long, Question> questionsById = new HashMap<>();
+        currentQuestions.forEach(question -> questionsById.put(question.getId(), question));
         Map<Long, AnswerAttempt> answers = new HashMap<>();
         for (AnswerAttempt answer : answerAttemptRepository.listByAttemptId(attempt.getId())) {
             answers.put(answer.getQuestion().getId(), answer);
+        }
+
+        // Attempts created before snapshots existed use their remaining recorded question order.
+        List<AttemptQuestion> gradingQuestions;
+        if (Boolean.TRUE.equals(attempt.getGradingSnapshotRecorded())) {
+            gradingQuestions = List.copyOf(attempt.getGradingQuestions());
+        } else {
+            Map<Long, Long> correctOptions = new HashMap<>();
+            for (AnswerOption option : answerOptionRepository.listCorrectByTestId(testId)) {
+                correctOptions.putIfAbsent(option.getQuestion().getId(), option.getId());
+            }
+            List<Long> originalIds = attempt.getQuestionIds();
+            gradingQuestions = currentQuestions.stream()
+                    .filter(question -> originalIds == null || originalIds.contains(question.getId()))
+                    .map(question -> new AttemptQuestion(question.getId(), question.getScore(), correctOptions.get(question.getId())))
+                    .toList();
         }
 
         int score = 0;
         int correct = 0;
         int incorrect = 0;
         int unanswered = 0;
-
-        for (Question question : questions) {
-            AnswerAttempt answer = answers.get(question.getId());
-            if (answer == null) {
+        for (AttemptQuestion snapshot : gradingQuestions) {
+            AnswerAttempt answer = answers.get(snapshot.getQuestionId());
+            Long selectedId = answer != null && answer.getSelectedOption() != null
+                    ? answer.getSelectedOption().getId() : snapshot.getSelectedOptionId();
+            if (answer == null && questionsById.containsKey(snapshot.getQuestionId())) {
                 answer = new AnswerAttempt();
                 answer.setAttempt(attempt);
-                answer.setQuestion(question);
+                answer.setQuestion(questionsById.get(snapshot.getQuestionId()));
             }
-
-            if (answer.getSelectedOption() == null) {
-                // Unanswered: no option, zero points and no answer timestamp
-                unanswered++;
-                answer.setIsCorrect(false);
-                answer.setAwardedScore(BigDecimal.ZERO);
-                answer.setAnsweredAt(null);
-            } else if (isCorrect(answer.getSelectedOption().getId(), correctByQuestion.get(question.getId()))) {
-                correct++;
-                int points = awardedPoints(question, answer.getSelectedOption().getId(),
-                        correctByQuestion.get(question.getId()));
-                score += points;
-                answer.setIsCorrect(true);
+            boolean isCorrect = isCorrect(selectedId, snapshot.getCorrectOptionId());
+            int points = isCorrect && snapshot.getQuestionScore() != null ? snapshot.getQuestionScore() : 0;
+            score += points;
+            if (selectedId == null) unanswered++;
+            else if (isCorrect) correct++;
+            else incorrect++;
+            if (answer != null) {
+                answer.setIsCorrect(isCorrect);
                 answer.setAwardedScore(BigDecimal.valueOf(points));
-            } else {
-                incorrect++;
-                answer.setIsCorrect(false);
-                answer.setAwardedScore(BigDecimal.ZERO);
+                if (selectedId == null) answer.setAnsweredAt(null);
+                answerAttemptRepository.save(answer);
             }
-            answerAttemptRepository.save(answer);
         }
 
         attempt.setStatus(TestAttempt.Status.SUBMITTED);
@@ -163,48 +164,6 @@ public class TestAttemptService {
             score += awardedPoints(question, selected.get(question.getId()), correct.get(question.getId()));
         }
         return score;
-    }
-
-    @Transactional
-    public void recalculateSubmittedAttempts(Long testId) {
-        List<Question> questions = questionRepository.listByTestId(testId);
-        for (TestAttempt attempt : testAttemptRepository.listSubmittedByTestId(testId)) {
-            Map<Long, AnswerAttempt> existing = new HashMap<>();
-            for (AnswerAttempt answer : answerAttemptRepository.listByAttemptId(attempt.getId())) {
-                existing.put(answer.getQuestion().getId(), answer);
-            }
-            int score = 0;
-            int correct = 0;
-            int incorrect = 0;
-            int unanswered = 0;
-            for (Question question : questions) {
-                AnswerAttempt answer = existing.get(question.getId());
-                if (answer == null) {
-                    answer = new AnswerAttempt();
-                    answer.setAttempt(attempt);
-                    answer.setQuestion(question);
-                    answer.setIsCorrect(false);
-                }
-                if (answer.getSelectedOption() == null) {
-                    unanswered++;
-                    answer.setAwardedScore(BigDecimal.ZERO);
-                } else if (Boolean.TRUE.equals(answer.getIsCorrect())) {
-                    correct++;
-                    int points = question.getScore() == null ? 0 : question.getScore();
-                    score += points;
-                    answer.setAwardedScore(BigDecimal.valueOf(points));
-                } else {
-                    incorrect++;
-                    answer.setAwardedScore(BigDecimal.ZERO);
-                }
-                answerAttemptRepository.save(answer);
-            }
-            attempt.setScore(score);
-            attempt.setCorrectCount(correct);
-            attempt.setIncorrectCount(incorrect);
-            attempt.setUnansweredCount(unanswered);
-            testAttemptRepository.save(attempt);
-        }
     }
 
     /**

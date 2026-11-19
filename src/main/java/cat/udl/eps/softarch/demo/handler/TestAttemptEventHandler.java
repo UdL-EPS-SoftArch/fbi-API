@@ -1,6 +1,8 @@
 package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Test;
+import cat.udl.eps.softarch.demo.domain.AttemptQuestion;
+import cat.udl.eps.softarch.demo.repository.AnswerOptionRepository;
 import cat.udl.eps.softarch.demo.domain.TestAttempt;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.TestAttemptRepository;
@@ -23,15 +25,17 @@ public class TestAttemptEventHandler {
     final TestAttemptRepository testAttemptRepository;
     final QuestionRepository questions;
     final TestRepository tests;
+    final AnswerOptionRepository options;
     final TestAttemptService testAttemptService;
     final LeaderboardService leaderboardService;
     final BadgeService badgeService;
 
     public TestAttemptEventHandler(QuestionRepository questions, TestRepository tests, TestAttemptRepository testAttemptRepository,
-                                   TestAttemptService testAttemptService,
+                                   TestAttemptService testAttemptService, AnswerOptionRepository options,
                                    LeaderboardService leaderboardService,
                                    BadgeService badgeService) {
         this.questions = questions;
+        this.options = options;
         this.tests = tests;
         this.testAttemptRepository = testAttemptRepository;
         this.testAttemptService = testAttemptService;
@@ -59,7 +63,16 @@ public class TestAttemptEventHandler {
             checkAvailable(test, user);
         }
         tests.lockForContentChange(test.getId()).orElseThrow();
-        attempt.setQuestionIds(new java.util.ArrayList<>(questions.listByTestId(test.getId()).stream().map(q -> q.getId()).toList()));
+        var testQuestions = questions.listByTestId(test.getId());
+        var correctOptions = new java.util.HashMap<Long, Long>();
+        options.listCorrectByTestId(test.getId()).forEach(option ->
+                correctOptions.putIfAbsent(option.getQuestion().getId(), option.getId()));
+        for (var question : testQuestions) {
+            attempt.getGradingQuestions().add(new AttemptQuestion(question.getId(), question.getScore(),
+                    correctOptions.get(question.getId())));
+        }
+        attempt.setGradingSnapshotRecorded(true);
+        attempt.setQuestionIds(new java.util.ArrayList<>(testQuestions.stream().map(q -> q.getId()).toList()));
         attempt.setQuestionOrderRecorded(true);
         attempt.setAttemptNumber((int) testAttemptRepository.countByUserAndTest(user, test) + 1);
     }
@@ -70,6 +83,10 @@ public class TestAttemptEventHandler {
 
         // The incoming entity is already merged with the request body: compare with the stored row
         TestAttemptRepository.AttemptSnapshot stored = testAttemptRepository.findSnapshotById(attempt.getId())
+                .orElseThrow(() -> new AccessDeniedException("Attempt not found"));
+
+        tests.lockForContentChange(stored.getTestId()).orElseThrow();
+        stored = testAttemptRepository.findSnapshotById(attempt.getId())
                 .orElseThrow(() -> new AccessDeniedException("Attempt not found"));
 
         // Only the user taking the test can touch the attempt (administrators included)

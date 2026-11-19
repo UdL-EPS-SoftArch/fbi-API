@@ -5,6 +5,7 @@ import cat.udl.eps.softarch.demo.domain.AnswerOption;
 import cat.udl.eps.softarch.demo.domain.Question;
 import cat.udl.eps.softarch.demo.domain.Test;
 import cat.udl.eps.softarch.demo.domain.TestAttempt;
+import cat.udl.eps.softarch.demo.domain.TestPreview;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.AnswerAttemptRepository;
 import cat.udl.eps.softarch.demo.repository.AnswerOptionRepository;
@@ -12,6 +13,9 @@ import cat.udl.eps.softarch.demo.repository.QuestionRepository;
 import cat.udl.eps.softarch.demo.repository.TestAttemptRepository;
 import cat.udl.eps.softarch.demo.repository.TestRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -76,7 +80,6 @@ public class TestAttemptService {
         int unanswered = 0;
 
         for (Question question : questions) {
-            int points = question.getScore() == null ? 0 : question.getScore();
             AnswerAttempt answer = answers.get(question.getId());
             if (answer == null) {
                 answer = new AnswerAttempt();
@@ -90,8 +93,10 @@ public class TestAttemptService {
                 answer.setIsCorrect(false);
                 answer.setAwardedScore(BigDecimal.ZERO);
                 answer.setAnsweredAt(null);
-            } else if (answer.getSelectedOption().getId().equals(correctByQuestion.get(question.getId()))) {
+            } else if (isCorrect(answer.getSelectedOption().getId(), correctByQuestion.get(question.getId()))) {
                 correct++;
+                int points = awardedPoints(question, answer.getSelectedOption().getId(),
+                        correctByQuestion.get(question.getId()));
                 score += points;
                 answer.setIsCorrect(true);
                 answer.setAwardedScore(BigDecimal.valueOf(points));
@@ -113,6 +118,51 @@ public class TestAttemptService {
                 ? 0
                 : (int) Duration.between(attempt.getStartedAt(), now).getSeconds());
         attempt.setCountsForLeaderboard(isEligibleForLeaderboard(attempt));
+    }
+
+    private boolean isCorrect(Long selectedOptionId, Long correctOptionId) {
+        return selectedOptionId != null && selectedOptionId.equals(correctOptionId);
+    }
+
+    private int awardedPoints(Question question, Long selectedOptionId, Long correctOptionId) {
+        return isCorrect(selectedOptionId, correctOptionId) && question.getScore() != null
+                ? question.getScore() : 0;
+    }
+
+    @Transactional
+    public int gradePreview(TestPreview preview, User user) {
+        if (preview.getTest() == null || preview.getTest().getId() == null || preview.getAnswers() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Test and answers are required");
+        }
+        Test test = testRepository.lockForContentChange(preview.getTest().getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Test not found"));
+        if (test.getAuthor() == null || !user.getUsername().equals(test.getAuthor().getUsername())) {
+            throw new AccessDeniedException("Only the test author can grade a preview");
+        }
+        List<Question> questions = questionRepository.listByTestId(test.getId());
+        Map<Long, Question> byId = new HashMap<>();
+        questions.forEach(question -> byId.put(question.getId(), question));
+        Map<Long, Long> correct = new HashMap<>();
+        for (AnswerOption option : answerOptionRepository.listCorrectByTestId(test.getId())) {
+            correct.putIfAbsent(option.getQuestion().getId(), option.getId());
+        }
+        Map<Long, Long> selected = new HashMap<>();
+        for (TestPreview.PreviewAnswer answer : preview.getAnswers()) {
+            if (answer == null || answer.getQuestionId() == null || !byId.containsKey(answer.getQuestionId())
+                    || selected.containsKey(answer.getQuestionId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or duplicate question");
+            }
+            if (answer.getSelectedOptionId() != null
+                    && !answerOptionRepository.existsByIdAndQuestionId(answer.getSelectedOptionId(), answer.getQuestionId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Option does not belong to question");
+            }
+            selected.put(answer.getQuestionId(), answer.getSelectedOptionId());
+        }
+        int score = 0;
+        for (Question question : questions) {
+            score += awardedPoints(question, selected.get(question.getId()), correct.get(question.getId()));
+        }
+        return score;
     }
 
     @Transactional

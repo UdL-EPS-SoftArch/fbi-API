@@ -59,6 +59,10 @@ public interface QuestionRepository extends CrudRepository<Question, Long>, Pagi
     Long sumScoresByTestId(@Param("testId") Long testId);
 
     /** Number of options and of correct options of each question of a test (publication checks, 2.4.4). */
+    /** Number of questions of a test, shown in the catalog (US-COM-03); internal use only. */
+    @RestResource(exported = false)
+    long countByTestId(Long testId);
+
     interface QuestionOptionStats {
         Long getQuestionId();
         Long getOptionCount();

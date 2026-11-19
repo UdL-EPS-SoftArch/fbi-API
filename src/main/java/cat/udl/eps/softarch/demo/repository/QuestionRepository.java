@@ -36,6 +36,14 @@ public interface QuestionRepository extends CrudRepository<Question, Long>, Pagi
     @Query("SELECT q FROM Question q WHERE q.test = :test AND (" + VISIBILITY_CLAUSE + ") ORDER BY q.orderIndex")
     Page<Question> findByTest(@Param("test") Test test, Pageable pageable);
 
+    @RestResource(path = "incompleteForPreview", rel = "incompleteForPreview")
+    @Query("SELECT q FROM Question q WHERE q.test.id = :testId AND q.test.status = 'DRAFT' " +
+           "AND (q.test.author.username = ?#{authentication.name} OR ?#{hasRole('ADMIN')} = true) " +
+           "AND ((SELECT COUNT(o) FROM AnswerOption o WHERE o.question = q) < 2 " +
+           "OR (SELECT COUNT(o) FROM AnswerOption o WHERE o.question = q AND o.isCorrect = true) <> 1) " +
+           "ORDER BY q.orderIndex, q.id")
+    List<Question> findIncompleteForPreview(@Param("testId") Long testId);
+
     /** Values as stored in the database (never the entity merged with the request body). */
     interface QuestionSnapshot {
         Long getTestId();

@@ -11,11 +11,27 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
 import java.util.List;
+import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 // Leaderboards are public: anyone can read them, only admins modify them (see LeaderboardEventHandler)
 @RepositoryRestResource
 public interface LeaderboardRepository extends CrudRepository<Leaderboard, Long>, PagingAndSortingRepository<Leaderboard, Long> {
 
+    @Override
+    @Query("SELECT l FROM Leaderboard l WHERE l.user.role = 'STUDENT'")
+    Page<Leaderboard> findAll(Pageable pageable);
+
+    @Override
+    @Query("SELECT l FROM Leaderboard l WHERE l.id = :id AND l.user.role = 'STUDENT'")
+    Optional<Leaderboard> findById(@Param("id") Long id);
+
+    @RestResource(exported = false)
+    @Query("SELECT l FROM Leaderboard l")
+    List<Leaderboard> listAllForRecalculation();
+
+    @Query("SELECT l FROM Leaderboard l WHERE l.leaderboardType = :type AND l.user.role = 'STUDENT' ORDER BY l.rank ASC")
     List<Leaderboard> findByLeaderboardTypeOrderByRankAsc(@Param("type") Leaderboard.LeaderboardType type);
 
     @RestResource(path = "globalSummary", rel = "globalSummary")
@@ -23,11 +39,13 @@ public interface LeaderboardRepository extends CrudRepository<Leaderboard, Long>
            "AND u.role = 'STUDENT' ORDER BY l.rank ASC, u.username ASC LIMIT 5")
     List<Leaderboard> findGlobalSummary();
 
+    @Query("SELECT l FROM Leaderboard l WHERE l.subject = :subject AND l.user.role = 'STUDENT' ORDER BY l.rank ASC")
     List<Leaderboard> findBySubjectOrderByRankAsc(@Param("subject") Subject subject);
 
     // Internal use only (SubjectEventHandler): does the subject have any leaderboard entry?
     @RestResource(exported = false)
     boolean existsBySubject(Subject subject);
 
+    @Query("SELECT l FROM Leaderboard l WHERE l.user = :user AND l.user.role = 'STUDENT'")
     List<Leaderboard> findByUser(@Param("user") User user);
 }

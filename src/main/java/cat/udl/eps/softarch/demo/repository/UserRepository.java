@@ -29,13 +29,22 @@ public interface UserRepository extends CrudRepository<User, Long>, PagingAndSor
   @Query("SELECT u FROM User u WHERE " + DISCOVERABLE_CLAUSE)
   Page<User> findAll(Pageable pageable);
 
+  @Override
+  @Query("SELECT u FROM User u WHERE u.id = :id AND (" + DISCOVERABLE_CLAUSE + ")")
+  Optional<User> findById(@Param("id") Long id);
+
   @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT u FROM User u WHERE u.username = :username")
   @RestResource(exported = false)
   Optional<User> findByUsernameForUpdate(@Param("username") String username);
 
   // Used for authentication (BasicUserDetailsService): must not be filtered
+  @RestResource(exported = false)
   Optional<User> findByUsername(@Param("username") String username);
+
+  @RestResource(path = "findByUsername", rel = "findByUsername")
+  @Query("SELECT u FROM User u WHERE u.username = :username AND (" + DISCOVERABLE_CLAUSE + ")")
+  Optional<User> findDiscoverableByUsername(@Param("username") String username);
 
   @RestResource(exported = false)
   Optional<User> findByEmail(String email);

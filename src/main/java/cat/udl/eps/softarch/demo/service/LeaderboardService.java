@@ -105,7 +105,7 @@ public class LeaderboardService {
 
         Map<String, Leaderboard> existing = new HashMap<>();
         List<Leaderboard> all = new ArrayList<>();
-        for (Leaderboard entry : leaderboardRepository.findAll()) {
+        for (Leaderboard entry : leaderboardRepository.listAllForRecalculation()) {
             all.add(entry);
             existing.putIfAbsent(key(entry.getLeaderboardType(), entry.getUser(), entry.getSubject()), entry);
         }

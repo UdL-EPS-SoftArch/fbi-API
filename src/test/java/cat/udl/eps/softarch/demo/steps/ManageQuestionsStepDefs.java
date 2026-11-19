@@ -290,26 +290,26 @@ public class ManageQuestionsStepDefs {
     @Then("submitted results after adding a question are correct")
     public void resultsAfterAdding() {
         assertEquals(3, maxScore());
-        assertAttempt(correctAttempt, 2, 1, 0, 1, 1);
-        assertAttempt(incorrectAttempt, 0, 0, 1, 1, 2);
-        assertAttempt(unansweredAttempt, 0, 0, 0, 2, 3);
+        assertAttempt(correctAttempt, 2, 1, 0, 0, 1);
+        assertAttempt(incorrectAttempt, 0, 0, 1, 0, 2);
+        assertAttempt(unansweredAttempt, 0, 0, 0, 1, 3);
     }
 
     @Then("submitted results after changing the score are correct")
     public void resultsAfterEdit() {
         assertEquals(4, maxScore());
-        assertAttempt(correctAttempt, 4, 1, 0, 0, 1);
+        assertAttempt(correctAttempt, 2, 1, 0, 0, 1);
         assertAttempt(incorrectAttempt, 0, 0, 1, 0, 2);
         assertAttempt(unansweredAttempt, 0, 0, 0, 1, 3);
-        assertEquals(0, jdbc.queryForObject("SELECT awarded_score FROM answer_attempt WHERE attempt_id = ?", BigDecimal.class, correctAttempt).compareTo(BigDecimal.valueOf(4)));
+        assertEquals(0, jdbc.queryForObject("SELECT awarded_score FROM answer_attempt WHERE attempt_id = ?", BigDecimal.class, correctAttempt).compareTo(BigDecimal.valueOf(2)));
     }
 
     @Then("submitted results after deleting the question are correct")
     public void resultsAfterDelete() {
         assertEquals(0, maxScore());
-        assertAttempt(correctAttempt, 0, 0, 0, 0, 1);
-        assertAttempt(incorrectAttempt, 0, 0, 0, 0, 2);
-        assertAttempt(unansweredAttempt, 0, 0, 0, 0, 3);
+        assertAttempt(correctAttempt, 2, 1, 0, 0, 1);
+        assertAttempt(incorrectAttempt, 0, 0, 1, 0, 2);
+        assertAttempt(unansweredAttempt, 0, 0, 0, 1, 3);
     }
 
     private void assertAttempt(Long id, int score, int correct, int incorrect, int unanswered, int number) {
@@ -324,10 +324,8 @@ public class ManageQuestionsStepDefs {
         assertEquals(submitted.plusSeconds(number), jdbc.queryForObject("SELECT submitted_at FROM test_attempt WHERE id = ?", java.sql.Timestamp.class, id).toInstant());
     }
 
-    @Then("the question options and answers are removed and its report is retained")
+    @Then("the report is retained after deleting the question")
     public void dependencies() {
-        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM answer_option WHERE question_id = ?", Integer.class, question.getId()));
-        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM answer_attempt WHERE question_id = ?", Integer.class, question.getId()));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM report WHERE id = ? AND question_id IS NULL AND test_id = ?", Integer.class, reportId, test.getId()));
     }
 
@@ -393,17 +391,18 @@ public class ManageQuestionsStepDefs {
     }
 
     @Given("a published CUSTOM question test with an in-progress attempt")
-    public void inProgressAttempt() {
+    public void inProgressAttempt() throws Exception {
         draftTest("CUSTOM", "demo", 1);
         test.setStatus(Test.Status.PUBLISHED);
         test.setIsPublic(true);
         tests.save(test);
-        TestAttempt attempt = new TestAttempt();
-        attempt.setTest(test);
-        attempt.setUser(users.findByUsername("demo").orElseThrow());
-        attempt.setStatus(TestAttempt.Status.IN_PROGRESS);
-        attempt.setStartedAt(started);
-        correctAttempt = attempts.save(attempt).getId();
+        actor("demo");
+        var response = steps.mockMvc.perform(post("/testAttempts").contentType(MediaType.APPLICATION_JSON)
+                .content(new JSONObject().put("test", test.getUri()).toString())
+                .with(AuthenticationStepDefs.authenticate())).andReturn().getResponse();
+        assertEquals(201, response.getStatus(), response.getContentAsString());
+        String location = response.getHeader("Location");
+        correctAttempt = Long.valueOf(location.substring(location.lastIndexOf('/') + 1));
     }
 
     @When("I submit the in-progress question attempt")

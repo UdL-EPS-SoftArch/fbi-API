@@ -46,6 +46,12 @@ public class NotificationEventHandler {
         }
     }
 
+    @HandleBeforeLinkSave
+    @HandleBeforeLinkDelete
+    public void handleNotificationPreLinkChange(Notification notification, Object linked) {
+        CurrentUser.denyRelationChange();
+    }
+
     @HandleBeforeDelete
     public void handleNotificationPreDelete(Notification notification) {
         User user = CurrentUser.get();

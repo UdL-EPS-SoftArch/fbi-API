@@ -60,6 +60,12 @@ public class AnswerAttemptEventHandler {
         answer.setAnsweredAt(Instant.now());
     }
 
+    @HandleBeforeLinkSave
+    @HandleBeforeLinkDelete
+    public void handleAnswerAttemptPreLinkChange(AnswerAttempt answer, Object linked) {
+        CurrentUser.denyRelationChange();
+    }
+
     // An answer can only be cleared by its owner while the attempt is in progress:
     // the answers of a submitted attempt are part of an immutable result (2.4.3)
     @HandleBeforeDelete

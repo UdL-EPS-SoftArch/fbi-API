@@ -44,6 +44,12 @@ public class ReportEventHandler {
         }
     }
 
+    @HandleBeforeLinkSave
+    @HandleBeforeLinkDelete
+    public void handleReportPreLinkChange(Report report, Object linked) {
+        CurrentUser.denyRelationChange();
+    }
+
     @HandleBeforeDelete
     public void handleReportPreDelete(Report report) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

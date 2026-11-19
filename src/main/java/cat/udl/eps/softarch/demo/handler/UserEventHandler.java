@@ -11,6 +11,7 @@ import org.springframework.data.rest.core.annotation.HandleAfterLinkSave;
 import org.springframework.data.rest.core.annotation.HandleAfterSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeCreate;
 import org.springframework.data.rest.core.annotation.HandleBeforeDelete;
+import org.springframework.data.rest.core.annotation.HandleBeforeLinkDelete;
 import org.springframework.data.rest.core.annotation.HandleBeforeLinkSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeSave;
 import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
@@ -84,8 +85,10 @@ public class UserEventHandler {
     }
 
     @HandleBeforeLinkSave
-    public void handleUserPreLinkSave(User user, Object o) {
-        logger.info("Before linking: {} to {}", user.toString(), o.toString());
+    @HandleBeforeLinkDelete
+    public void handleUserPreLinkChange(User user, Object o) {
+        logger.info("Rejected link change on user {}", user.getId());
+        CurrentUser.denyRelationChange();
     }
 
     @HandleAfterCreate

@@ -42,6 +42,12 @@ public class UserBadgeEventHandler {
         }
     }
 
+    @HandleBeforeLinkSave
+    @HandleBeforeLinkDelete
+    public void handleUserBadgePreLinkChange(UserBadge userBadge, Object linked) {
+        CurrentUser.denyRelationChange();
+    }
+
     @HandleBeforeDelete
     public void handleUserBadgePreDelete(UserBadge userBadge) {
         User user = CurrentUser.get();

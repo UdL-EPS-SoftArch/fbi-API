@@ -29,4 +29,11 @@ final class CurrentUser {
     static String usernameOf(User user) {
         return user == null ? null : user.getUsername();
     }
+
+    // US-SEC-01: association endpoints (/{resource}/{id}/{property}) skip @HandleBeforeSave,
+    // so relations can only be set through the resource itself, where ownership is checked.
+    static void denyRelationChange() {
+        get();
+        throw new AccessDeniedException("Relations cannot be changed through association endpoints");
+    }
 }

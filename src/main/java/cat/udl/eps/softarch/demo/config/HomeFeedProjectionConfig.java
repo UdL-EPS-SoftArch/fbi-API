@@ -1,6 +1,7 @@
 package cat.udl.eps.softarch.demo.config;
 
 import cat.udl.eps.softarch.demo.repository.AnswerKeyProjection;
+import cat.udl.eps.softarch.demo.repository.CatalogTestProjection;
 import cat.udl.eps.softarch.demo.repository.FeaturedTestProjection;
 import cat.udl.eps.softarch.demo.repository.LeaderboardSummaryProjection;
 import org.springframework.context.annotation.Configuration;
@@ -15,5 +16,6 @@ public class HomeFeedProjectionConfig implements RepositoryRestConfigurer {
         config.getProjectionConfiguration().addProjection(FeaturedTestProjection.class);
         config.getProjectionConfiguration().addProjection(LeaderboardSummaryProjection.class);
         config.getProjectionConfiguration().addProjection(AnswerKeyProjection.class);
+        config.getProjectionConfiguration().addProjection(CatalogTestProjection.class);
     }
 }

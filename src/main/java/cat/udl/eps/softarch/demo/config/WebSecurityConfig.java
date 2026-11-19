@@ -69,6 +69,10 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/subjects/*", "/tests/*", "/badges/*", "/leaderboards/*").permitAll() // Public area for visitors
                 .requestMatchers(HttpMethod.GET, publicReads).permitAll()
                 .requestMatchers(HttpMethod.HEAD, publicReads).permitAll()
+                .requestMatchers(HttpMethod.POST, "/*/*/*/**").denyAll()
+                .requestMatchers(HttpMethod.PUT, "/*/*/*/**").denyAll()
+                .requestMatchers(HttpMethod.PATCH, "/*/*/*/**").denyAll()
+                .requestMatchers(HttpMethod.DELETE, "/*/*/*/**").denyAll()
                 .requestMatchers(HttpMethod.GET, "/*/*").authenticated()
                 .requestMatchers(HttpMethod.POST, "/*/*").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/*/*").authenticated()

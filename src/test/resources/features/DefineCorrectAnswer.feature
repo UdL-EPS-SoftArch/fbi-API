@@ -46,7 +46,7 @@ Feature: Define the correct answer
     And I add a question to test "Practice SQL" worth 1 points with 2 options, 0 of them correct
     When I publish the test "Practice SQL" with public visibility "true"
     Then The response code is 400
-    And The error message is "must have exactly one correct option"
+    And The error message is "Question 1 has no correct answer"
     And The test "Practice SQL" has status "DRAFT"
 
   Scenario: The author sees which option is correct

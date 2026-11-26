@@ -43,7 +43,6 @@ public class TestEventHandler {
         if (test.getSubject() != null && !test.getSubject().isActive()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Tests cannot be created in an archived subject");
         }
-        testContentService.checkVisibility(test);
         // A new test has no questions yet, so it can only be published once they are added
         if (test.getStatus() == Test.Status.PUBLISHED) {
             testContentService.checkPublishable(test);
@@ -77,10 +76,12 @@ public class TestEventHandler {
             }
         }
         checkOfficialByAdmin(test, user);
-        testContentService.checkVisibility(test);
-        // Validated when the test becomes published (first publication or republication)
+        // Validated when the test becomes published (first publication or republication), with the
+        // whole checklist; an already published test only has to keep its visibility rule
         if (test.getStatus() == Test.Status.PUBLISHED && stored.getStatus() != Test.Status.PUBLISHED) {
             testContentService.checkPublishable(test);
+        } else {
+            testContentService.checkVisibility(test);
         }
         setPublishedAt(test);
     }

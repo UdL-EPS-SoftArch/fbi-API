@@ -79,6 +79,12 @@ public class User extends UriEntity<Long> implements UserDetails {
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private Boolean acceptTerms;
 
+	// Page where the visitor started registering (US-AUT-05): used once, on the first login
+	// after verifying the email. Never returned by the API
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+	@Length(max = 2048)
+	private String returnTo;
+
 	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
 	private String fullName;
 

@@ -39,8 +39,13 @@ public interface LeaderboardRepository extends CrudRepository<Leaderboard, Long>
            "AND u.role = 'STUDENT' ORDER BY l.rank ASC, u.username ASC LIMIT 5")
     List<Leaderboard> findGlobalSummary();
 
-    @Query("SELECT l FROM Leaderboard l WHERE l.subject = :subject AND l.user.role = 'STUDENT' ORDER BY l.rank ASC")
+    @RestResource(exported = false)
+    @Query("SELECT l FROM Leaderboard l WHERE l.subject = :subject AND l.user.role = 'STUDENT' ORDER BY l.rank ASC, l.user.username ASC")
     List<Leaderboard> findBySubjectOrderByRankAsc(@Param("subject") Subject subject);
+
+    @RestResource(path = "findBySubjectOrderByRankAsc", rel = "findBySubjectOrderByRankAsc")
+    @Query("SELECT l FROM Leaderboard l WHERE l.subject = :subject AND l.user.role = 'STUDENT' ORDER BY l.rank ASC, l.user.username ASC")
+    Page<Leaderboard> findSubjectLeaderboard(@Param("subject") Subject subject, Pageable pageable);
 
     // Internal use only (SubjectEventHandler): does the subject have any leaderboard entry?
     @RestResource(exported = false)

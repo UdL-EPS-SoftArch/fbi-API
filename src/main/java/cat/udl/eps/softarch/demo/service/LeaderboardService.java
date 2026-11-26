@@ -112,7 +112,13 @@ public class LeaderboardService {
 
         Set<Leaderboard> used = Collections.newSetFromMap(new IdentityHashMap<>());
         Instant now = Instant.now();
-        store(subjectTotals.values(), Leaderboard.LeaderboardType.SUBJECT, existing, used, now);
+        Map<Long, List<Totals>> totalsBySubject = new LinkedHashMap<>();
+        for (Totals total : subjectTotals.values()) {
+            totalsBySubject.computeIfAbsent(total.subject.getId(), ignored -> new ArrayList<>()).add(total);
+        }
+        for (List<Totals> subjectRanking : totalsBySubject.values()) {
+            store(subjectRanking, Leaderboard.LeaderboardType.SUBJECT, existing, used, now);
+        }
         store(globalTotals.values(), Leaderboard.LeaderboardType.GLOBAL, existing, used, now);
 
         // Users that are no longer eligible (withdrawn test, ...) disappear from the ranking

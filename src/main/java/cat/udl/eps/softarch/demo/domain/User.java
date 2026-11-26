@@ -91,6 +91,9 @@ public class User extends UriEntity<Long> implements UserDetails {
 	private String profilePicture;
 
 	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
+	private Boolean leaderboardAnonymous = false;
+
+	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
 	private LocalDate birthDate;
 
 	@CreatedDate

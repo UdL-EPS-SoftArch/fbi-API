@@ -50,7 +50,7 @@ public class WebSecurityConfig {
                 "/tests/search/findPublicPublishedBySubject", "/tests/search/featured", // HomeFeedPathFilter maps /featuredTests here
                 "/tests/search/catalog", "/tests/search/catalogByPopularity", // Catalog search (US-COM-04)
                 "/badges", "/badges/*", "/badges/search/findByName", "/badges/search/findByIsActive",
-                "/leaderboards", "/leaderboards/*", "/leaderboards/search/findByLeaderboardTypeOrderByRankAsc", "/leaderboards/search/findBySubjectOrderByRankAsc", "/leaderboards/search/findByUser",
+                "/leaderboardPeriods", "/leaderboardPeriods/*", "/leaderboards", "/leaderboards/*", "/leaderboards/search/findByLeaderboardTypeOrderByRankAsc", "/leaderboards/search/findBySubjectOrderByRankAsc", "/leaderboards/search/findByUser",
                 "/leaderboards/search/globalSummary", // HomeFeedPathFilter maps /leaderboardSummary here
                 "/users/*", "/users/search/findByUsernameContaining"
         };

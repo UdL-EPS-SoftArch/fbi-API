@@ -58,16 +58,22 @@ public class UserEventHandler {
         user.setRole(User.Role.STUDENT);
         // New accounts cannot log in until they open the link sent by email (US-AUT-07)
         user.setEmailVerified(false);
+
+        user.setShowFullName(false);
+        user.setShowEmail(false);
+
         // Only internal addresses are kept, so the first login cannot send anyone outside (US-AUT-05)
         if (!ReturnAddressService.isInternal(user.getReturnTo())) {
             user.setReturnTo(null);
-        }
     }
 
     @HandleBeforeSave
     public void handleUserPreSave(User user) {
         logger.info("Before updating user {}", user.getId());
-        checkSelfOrAdmin(user, "Users can only modify their own profile");
+        User current = checkSelfOrAdmin(user, "Users can only modify their own profile");
+        if (!current.getId().equals(user.getId()) && publicationSettingsChanged(user)) {
+            throw new AccessDeniedException("Users can only change their own profile publication settings");
+        }
         String storedPassword = jdbc.queryForObject(
                 "SELECT password FROM demo_user WHERE id = ?", String.class, user.getId());
         if (!java.util.Objects.equals(storedPassword, user.getPassword()) || user.isPasswordReset()) {
@@ -76,11 +82,20 @@ public class UserEventHandler {
         }
     }
 
-    private void checkSelfOrAdmin(User target, String message) {
+    private boolean publicationSettingsChanged(User user) {
+        return Boolean.TRUE.equals(jdbc.queryForObject(
+                "SELECT show_full_name, show_email FROM demo_user WHERE id = ?",
+                (row, rowNumber) -> row.getBoolean("show_full_name") != user.getShowFullName()
+                        || row.getBoolean("show_email") != user.getShowEmail(),
+                user.getId()));
+    }
+
+    private User checkSelfOrAdmin(User target, String message) {
         User current = CurrentUser.get();
         if (!CurrentUser.isAdmin(current) && !current.getId().equals(target.getId())) {
             throw new AccessDeniedException(message);
         }
+        return current;
     }
 
     @HandleBeforeDelete

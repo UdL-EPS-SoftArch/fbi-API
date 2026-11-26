@@ -88,16 +88,32 @@ public class User extends UriEntity<Long> implements UserDetails {
 	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
 	private Role role = Role.STUDENT;
 
+	@JsonSerialize(using = ProfileVisibilitySerializer.class)
 	private String profilePicture;
+
+	private Boolean profilePublic = true;
+
+	@JsonSerialize(using = ProfileVisibilitySerializer.class)
+	private Boolean anonymousInLeaderboards = false;
+
+	public boolean isProfilePublic() {
+		return profilePublic == null || profilePublic;
+	}
+
+	public boolean isAnonymousInLeaderboards() {
+		return Boolean.TRUE.equals(anonymousInLeaderboards);
+	}
 
 	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
 	private LocalDate birthDate;
 
+	@JsonSerialize(using = ProfileVisibilitySerializer.class)
 	@CreatedDate
 	@DateTimeFormat
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private Instant createdAt;
 
+	@JsonSerialize(using = ProfileVisibilitySerializer.class)
 	@LastModifiedDate
 	@DateTimeFormat
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -116,6 +132,7 @@ public class User extends UriEntity<Long> implements UserDetails {
 	}
 
 	@Override
+	@JsonSerialize(using = ProfileVisibilitySerializer.class)
 	public boolean isAccountNonExpired() {
 		return true;
 	}
@@ -127,6 +144,7 @@ public class User extends UriEntity<Long> implements UserDetails {
 	}
 
 	@Override
+	@JsonSerialize(using = ProfileVisibilitySerializer.class)
 	public boolean isCredentialsNonExpired() {
 		return true;
 	}

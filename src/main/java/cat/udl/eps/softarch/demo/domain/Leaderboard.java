@@ -1,8 +1,10 @@
 package cat.udl.eps.softarch.demo.domain;
 
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
+import org.springframework.data.rest.core.annotation.RestResource;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -26,6 +28,8 @@ public class Leaderboard extends UriEntity<Long> {
     @NotNull
     @ManyToOne
     @JsonIdentityReference(alwaysAsId = true)
+    @RestResource(exported = false)
+    @JsonIgnore
     private User user;
 
     // Not used in the initial release (no test-specific leaderboards)

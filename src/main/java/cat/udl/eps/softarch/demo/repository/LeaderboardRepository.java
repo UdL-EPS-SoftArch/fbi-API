@@ -51,6 +51,8 @@ public interface LeaderboardRepository extends CrudRepository<Leaderboard, Long>
     @RestResource(exported = false)
     boolean existsBySubject(Subject subject);
 
-    @Query("SELECT l FROM Leaderboard l WHERE l.user = :user AND l.user.role = 'STUDENT'")
+    @Query("SELECT l FROM Leaderboard l WHERE l.user = :user AND l.user.role = 'STUDENT' " +
+           "AND (l.user.anonymousInLeaderboards = false OR l.user.anonymousInLeaderboards IS NULL " +
+           "OR l.user.username = ?#{authentication.name})")
     List<Leaderboard> findByUser(@Param("user") User user);
 }

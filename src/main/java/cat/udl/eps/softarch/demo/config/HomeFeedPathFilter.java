@@ -25,6 +25,8 @@ public class HomeFeedPathFilter extends OncePerRequestFilter {
         String target = switch (path) {
             case "/featuredTests", "/tests/search/featured" -> "/tests/search/featured";
             case "/leaderboardSummary", "/leaderboards/search/globalSummary" -> "/leaderboards/search/globalSummary";
+            case "/leaderboards/search/findByLeaderboardTypeOrderByRankAsc" -> "/leaderboards/search/findByLeaderboardTypeOrderByRankAsc";
+            case "/leaderboards/search/findBySubjectOrderByRankAsc" -> "/leaderboards/search/findBySubjectOrderByRankAsc";
             default -> null;
         };
         if (target == null || !"GET".equals(request.getMethod())) {

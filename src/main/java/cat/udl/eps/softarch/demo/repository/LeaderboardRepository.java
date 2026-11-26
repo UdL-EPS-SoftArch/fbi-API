@@ -20,39 +20,43 @@ import org.springframework.data.domain.Pageable;
 public interface LeaderboardRepository extends CrudRepository<Leaderboard, Long>, PagingAndSortingRepository<Leaderboard, Long> {
 
     @Override
-    @Query("SELECT l FROM Leaderboard l WHERE l.user.role = 'STUDENT'")
+    @Query("SELECT l FROM Leaderboard l WHERE l.period IS NULL AND l.user.role = 'STUDENT' AND (l.user.leaderboardAnonymous IS NULL OR l.user.leaderboardAnonymous = false)")
     Page<Leaderboard> findAll(Pageable pageable);
 
     @Override
-    @Query("SELECT l FROM Leaderboard l WHERE l.id = :id AND l.user.role = 'STUDENT'")
+    @Query("SELECT l FROM Leaderboard l WHERE l.id = :id AND l.user.role = 'STUDENT' AND (l.user.leaderboardAnonymous IS NULL OR l.user.leaderboardAnonymous = false)")
     Optional<Leaderboard> findById(@Param("id") Long id);
 
     @RestResource(exported = false)
-    @Query("SELECT l FROM Leaderboard l")
+    @Query("SELECT l FROM Leaderboard l WHERE l.period IS NULL")
     List<Leaderboard> listAllForRecalculation();
 
-    @Query("SELECT l FROM Leaderboard l WHERE l.leaderboardType = :type AND l.user.role = 'STUDENT' ORDER BY l.rank ASC")
-    List<Leaderboard> findByLeaderboardTypeOrderByRankAsc(@Param("type") Leaderboard.LeaderboardType type);
+    @Query("SELECT l FROM Leaderboard l WHERE l.leaderboardType = :type AND l.user.role = 'STUDENT' AND ((:period IS NULL AND l.period IS NULL) OR (:period IS NOT NULL AND ((l.period.id = :period) OR (l.period IS NULL AND EXISTS (SELECT p FROM LeaderboardPeriod p WHERE p.id = :period AND p.endsAt IS NULL))))) ORDER BY l.rank ASC, l.user.username ASC")
+    Page<Leaderboard> findByLeaderboardTypeOrderByRankAsc(@Param("type") Leaderboard.LeaderboardType type, @Param("period") Long period, Pageable pageable);
 
     @RestResource(path = "globalSummary", rel = "globalSummary")
     @Query("SELECT l FROM Leaderboard l JOIN l.user u WHERE l.leaderboardType = 'GLOBAL' " +
-           "AND u.role = 'STUDENT' ORDER BY l.rank ASC, u.username ASC LIMIT 5")
+           "AND l.period IS NULL AND u.role = 'STUDENT' ORDER BY l.rank ASC, u.username ASC LIMIT 5")
     List<Leaderboard> findGlobalSummary();
 
     @RestResource(exported = false)
-    @Query("SELECT l FROM Leaderboard l WHERE l.subject = :subject AND l.user.role = 'STUDENT' ORDER BY l.rank ASC, l.user.username ASC")
+    @Query("SELECT l FROM Leaderboard l WHERE l.period IS NULL AND l.subject = :subject AND l.user.role = 'STUDENT' ORDER BY l.rank ASC, l.user.username ASC")
     List<Leaderboard> findBySubjectOrderByRankAsc(@Param("subject") Subject subject);
 
     @RestResource(path = "findBySubjectOrderByRankAsc", rel = "findBySubjectOrderByRankAsc")
-    @Query("SELECT l FROM Leaderboard l WHERE l.subject = :subject AND l.user.role = 'STUDENT' ORDER BY l.rank ASC, l.user.username ASC")
+    @Query("SELECT l FROM Leaderboard l WHERE l.period IS NULL AND l.subject = :subject AND l.user.role = 'STUDENT' ORDER BY l.rank ASC, l.user.username ASC")
     Page<Leaderboard> findSubjectLeaderboard(@Param("subject") Subject subject, Pageable pageable);
 
     // Internal use only (SubjectEventHandler): does the subject have any leaderboard entry?
     @RestResource(exported = false)
     boolean existsBySubject(Subject subject);
 
-    @Query("SELECT l FROM Leaderboard l WHERE l.user = :user AND l.user.role = 'STUDENT' " +
-           "AND (l.user.anonymousInLeaderboards = false OR l.user.anonymousInLeaderboards IS NULL " +
+    @Query("SELECT l FROM Leaderboard l " +
+           "WHERE l.period IS NULL " +
+           "AND l.user = :user " +
+           "AND l.user.role = 'STUDENT' " +
+           "AND (l.user.anonymousInLeaderboards = false " +
+           "OR l.user.anonymousInLeaderboards IS NULL " +
            "OR l.user.username = ?#{authentication.name})")
     List<Leaderboard> findByUser(@Param("user") User user);
 }

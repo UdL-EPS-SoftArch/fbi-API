@@ -42,6 +42,10 @@ public class Leaderboard extends UriEntity<Long> {
     @JsonIdentityReference(alwaysAsId = true)
     private Subject subject;
 
+    @ManyToOne
+    @JsonIdentityReference(alwaysAsId = true)
+    private LeaderboardPeriod period;
+
     @NotNull
     @Enumerated(EnumType.STRING)
     private LeaderboardType leaderboardType;

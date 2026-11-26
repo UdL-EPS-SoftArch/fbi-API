@@ -1,5 +1,6 @@
 package cat.udl.eps.softarch.demo.repository;
 
+import cat.udl.eps.softarch.demo.domain.Badge;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.domain.UserBadge;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,7 @@ import org.springframework.data.rest.core.annotation.RestResource;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @RepositoryRestResource
@@ -34,6 +36,10 @@ public interface UserBadgeRepository extends CrudRepository<UserBadge, Long>, Pa
 
     @Query("SELECT ub FROM UserBadge ub WHERE ub.user = :user AND (" + VISIBILITY_CLAUSE + ")")
     Page<UserBadge> findByUser(@Param("user") User user, Pageable pageable);
+
+    @RestResource(exported = false)
+    @Query("SELECT b FROM UserBadge ub JOIN ub.badge b WHERE ub.user.id = :userId AND ub.isVisible = true ORDER BY b.name")
+    List<Badge> findVisibleProfileBadges(@Param("userId") Long userId);
 
     /** Values as stored in the database (never the entity merged with the request body). */
     interface UserBadgeSnapshot {

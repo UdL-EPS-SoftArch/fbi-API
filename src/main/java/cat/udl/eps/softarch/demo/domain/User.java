@@ -47,11 +47,10 @@ public class User extends UriEntity<Long> implements UserDetails {
 	@Column(unique = true)
 	private String username;
 
-	// Private profile fields: only the owner and administrators can read them (2.4.7)
 	@NotBlank
 	@Email
 	@Column(unique = true)
-	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
+	@JsonSerialize(using = PrivateProfileFieldSerializer.Email.class)
 	private String email;
 
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -79,14 +78,28 @@ public class User extends UriEntity<Long> implements UserDetails {
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	private Boolean acceptTerms;
 
-	// Page where the visitor started registering (US-AUT-05): used once, on the first login
-	// after verifying the email. Never returned by the API
-	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-	@Length(max = 2048)
-	private String returnTo;
+  // Page where the visitor started registering (US-AUT-05): used once, on the first login
+  // after verifying the email. Never returned by the API
+  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+  @Length(max = 2048)
+  private String returnTo;
+
+  @JsonSerialize(using = PrivateProfileFieldSerializer.FullName.class)
+	private String fullName;
 
 	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
-	private String fullName;
+	private Boolean showFullName = false;
+
+	@JsonSerialize(using = PrivateProfileFieldSerializer.class)
+	private Boolean showEmail = false;
+
+	public Boolean getShowFullName() {
+		return Boolean.TRUE.equals(showFullName);
+	}
+
+	public Boolean getShowEmail() {
+		return Boolean.TRUE.equals(showEmail);
+	}
 
 	// Hidden from other users so that administrator accounts are not publicly discoverable
 	@Enumerated(EnumType.STRING)

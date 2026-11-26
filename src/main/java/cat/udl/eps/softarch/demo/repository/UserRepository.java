@@ -46,6 +46,18 @@ public interface UserRepository extends CrudRepository<User, Long>, PagingAndSor
   @Query("SELECT u FROM User u WHERE u.username = :username AND (" + DISCOVERABLE_CLAUSE + ")")
   Optional<User> findDiscoverableByUsername(@Param("username") String username);
 
+  @RestResource(path = "publicProfile", rel = "publicProfile")
+  @Query("""
+      SELECT new cat.udl.eps.softarch.demo.repository.PublicProfile(
+          u.id, u.username, COALESCE(u.profilePublic, true),
+          CASE WHEN COALESCE(u.profilePublic, true) = true THEN u.profilePicture ELSE null END,
+          CASE WHEN COALESCE(u.profilePublic, true) = true AND u.showFullName = true THEN u.fullName ELSE null END,
+          CASE WHEN COALESCE(u.profilePublic, true) = true AND u.showEmail = true THEN u.email ELSE null END)
+      FROM User u
+      WHERE u.username = :username AND u.role = 'STUDENT'
+      """)
+  Optional<PublicProfile> findPublicProfile(@Param("username") String username);
+
   @RestResource(exported = false)
   Optional<User> findByEmail(String email);
 

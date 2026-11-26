@@ -69,10 +69,12 @@ public class DefineQuestionScoringStepDefs {
 
     @Then("Question {int} of test {string} has a score of {int}")
     public void questionHasAScoreOf(int position, String title, int score) {
-        assertEquals(score, findQuestion(findTest(title), position).getScore());
+        Question question = findQuestion(findTest(title), position);
+        assertEquals(score, question.getScore());
+        assertEquals(score > 0, question.isScored());
     }
 
-    // The API returns a score of 0, which the client shows as "not scored"
+    // The API returns a score of 0 and scored = false, so the client shows it as "not scored"
     @Then("Question {int} of test {string} is shown as not scored")
     public void questionIsShownAsNotScored(int position, String title) throws Throwable {
         Question question = findQuestion(findTest(title), position);
@@ -81,7 +83,8 @@ public class DefineQuestionScoringStepDefs {
                         .with(AuthenticationStepDefs.authenticate()))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.score").value(0));
+                .andExpect(jsonPath("$.score").value(0))
+                .andExpect(jsonPath("$.scored").value(false));
     }
 
     private void postQuestion(JSONObject body) throws Throwable {

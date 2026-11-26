@@ -52,7 +52,7 @@ public class WebSecurityConfig {
                 "/badges", "/badges/*", "/badges/search/findByName", "/badges/search/findByIsActive",
                 "/leaderboardPeriods", "/leaderboardPeriods/*", "/leaderboards", "/leaderboards/*", "/leaderboards/search/findByLeaderboardTypeOrderByRankAsc", "/leaderboards/search/findBySubjectOrderByRankAsc", "/leaderboards/search/findByUser",
                 "/leaderboards/search/globalSummary", // HomeFeedPathFilter maps /leaderboardSummary here
-                "/users/*", "/users/search/findByUsernameContaining"
+                "/users/*", "/users/search/findByUsernameContaining", "/users/search/publicProfile"
         };
         http.addFilterAfter(new QuestionTransactionFilter(transactionManager), AuthorizationFilter.class)
             .authorizeHttpRequests((auth) -> auth

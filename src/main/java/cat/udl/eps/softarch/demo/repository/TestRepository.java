@@ -42,6 +42,14 @@ public interface TestRepository extends CrudRepository<Test, Long>, PagingAndSor
     @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE t.author = :user AND (" + VISIBILITY_CLAUSE + ")")
     Page<Test> findByAuthor(@Param("user") User author, Pageable pageable);
 
+    @RestResource(exported = false)
+    @Query("""
+        SELECT t FROM Test t
+        WHERE t.author.id = :userId AND t.testType = 'CUSTOM' AND t.status = 'PUBLISHED' AND t.isPublic = true
+        ORDER BY t.publishedAt DESC, t.id DESC
+        """)
+    List<Test> findPublicCustomTestsForProfile(@Param("userId") Long userId);
+
     @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE t.subject = :subject AND (" + VISIBILITY_CLAUSE + ")")
     Page<Test> findBySubject(@Param("subject") Subject subject, Pageable pageable);
 

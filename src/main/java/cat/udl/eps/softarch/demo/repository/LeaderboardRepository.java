@@ -59,4 +59,14 @@ public interface LeaderboardRepository extends CrudRepository<Leaderboard, Long>
            "OR l.user.anonymousInLeaderboards IS NULL " +
            "OR l.user.username = ?#{authentication.name})")
     List<Leaderboard> findByUser(@Param("user") User user);
+
+    @RestResource(exported = false)
+    @Query("""
+        SELECT l FROM Leaderboard l LEFT JOIN FETCH l.subject
+        WHERE l.user.id = :userId AND l.period IS NULL
+          AND COALESCE(l.user.anonymousInLeaderboards, false) = false
+          AND COALESCE(l.user.leaderboardAnonymous, false) = false
+        ORDER BY l.leaderboardType, l.rank, l.id
+        """)
+    List<Leaderboard> findPublicPositionsForProfile(@Param("userId") Long userId);
 }

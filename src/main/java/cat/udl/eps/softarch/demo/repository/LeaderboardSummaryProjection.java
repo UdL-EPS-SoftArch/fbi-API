@@ -6,9 +6,11 @@ import org.springframework.data.rest.core.config.Projection;
 
 @Projection(name = "leaderboardSummary", types = Leaderboard.class)
 public interface LeaderboardSummaryProjection {
-    @Value("#{target.user.role.name() == 'ADMIN' ? null : (target.user.leaderboardAnonymous == true ? 'Anonymous student' : target.user.username)}")
+
+    @Value("#{target.user.role.name() == 'ADMIN' ? null : @leaderboardPrivacy.displayName(target.user)}")
     String getUsername();
 
     Integer getRank();
+
     Integer getScore();
 }

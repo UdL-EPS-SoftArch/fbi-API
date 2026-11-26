@@ -1,9 +1,11 @@
 package cat.udl.eps.softarch.demo.steps;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import cat.udl.eps.softarch.demo.domain.AnswerOption;
@@ -113,6 +115,40 @@ public class PublishTestStepDefs {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(AuthenticationStepDefs.authenticate()))
                 .andDo(print());
+    }
+
+    @When("I open the publication check of test {string}")
+    public void iOpenThePublicationCheck(String title) throws Throwable {
+        stepDefs.result = stepDefs.mockMvc.perform(
+                get(findTest(title).getUri() + "/publicationCheck")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(AuthenticationStepDefs.authenticate()))
+                .andDo(print());
+    }
+
+    @And("The publication check is not publishable")
+    public void thePublicationCheckIsNotPublishable() throws Throwable {
+        stepDefs.result.andExpect(jsonPath("$.publishable").value(false));
+    }
+
+    @And("The requirement {string} is passed")
+    public void theRequirementIsPassed(String message) throws Throwable {
+        stepDefs.result.andExpect(jsonPath(
+                "$.requirements[?(@.message == '" + message + "' && @.passed == true)]").isNotEmpty());
+    }
+
+    @And("The requirement {string} is failed and points to question {int}")
+    public void theRequirementIsFailedAndPointsToQuestion(String message, int number) throws Throwable {
+        stepDefs.result.andExpect(jsonPath(
+                "$.requirements[?(@.message == '" + message + "' && @.passed == false "
+                        + "&& @.target.type == 'QUESTION' && @.target.number == " + number + ")]").isNotEmpty());
+    }
+
+    @And("The requirement {string} is failed and points to the field {string}")
+    public void theRequirementIsFailedAndPointsToTheField(String message, String field) throws Throwable {
+        stepDefs.result.andExpect(jsonPath(
+                "$.requirements[?(@.message == '" + message + "' && @.passed == false "
+                        + "&& @.target.type == 'TEST' && @.target.field == '" + field + "')]").isNotEmpty());
     }
 
     @Then("The test {string} has a maximum score of {int}")

@@ -5,6 +5,9 @@ import cat.udl.eps.softarch.demo.domain.Test;
 import cat.udl.eps.softarch.demo.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -44,6 +47,18 @@ public interface TestRepository extends CrudRepository<Test, Long>, PagingAndSor
 
     @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :text, '%')) AND (" + VISIBILITY_CLAUSE + ")")
     Page<Test> findByTitleContaining(@Param("text") String text, Pageable pageable);
+
+    @RestResource(exported = false)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT t FROM Test t WHERE t.id = :id")
+    Optional<Test> lockForContentChange(@Param("id") Long id);
+
+    /** Derived value: only written by the server when the questions of the test change. */
+    @RestResource(exported = false)
+    @Modifying
+    @Transactional
+    @Query("UPDATE Test t SET t.maxScore = :maxScore WHERE t.id = :id")
+    void updateMaxScore(@Param("id") Long id, @Param("maxScore") Integer maxScore);
 
     @RestResource(path = "featured", rel = "featured")
     @Query("SELECT t FROM TestAttempt a JOIN a.test t " +

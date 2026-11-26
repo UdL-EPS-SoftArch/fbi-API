@@ -2,6 +2,7 @@ package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
+import cat.udl.eps.softarch.demo.service.EmailVerificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.rest.core.annotation.HandleAfterCreate;
@@ -13,8 +14,10 @@ import org.springframework.data.rest.core.annotation.HandleBeforeDelete;
 import org.springframework.data.rest.core.annotation.HandleBeforeLinkSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeSave;
 import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 @Component
 @RepositoryEventHandler
@@ -24,15 +27,35 @@ public class UserEventHandler {
 
     final UserRepository userRepository;
     final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    final EmailVerificationService emailVerificationService;
 
-    public UserEventHandler(UserRepository userRepository, org.springframework.jdbc.core.JdbcTemplate jdbc) {
+    public UserEventHandler(UserRepository userRepository, org.springframework.jdbc.core.JdbcTemplate jdbc,
+                            EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
         this.jdbc = jdbc;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @HandleBeforeCreate
     public void handleUserPreCreate(User user) {
         logger.info("Before creating: {}", user.toString());
+        if (!Boolean.TRUE.equals(user.getAcceptTerms())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The Terms of Use and Privacy Policy must be accepted");
+        }
+        // Clear 409s instead of raw database constraint violations
+        if (user.getUsername() != null && userRepository.existsByUsername(user.getUsername())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This public name is already taken, please choose another one");
+        }
+        if (user.getEmail() != null && userRepository.existsByEmail(user.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This email cannot be used, try logging in or recovering your password");
+        }
+        // Registration always creates students; the role cannot be chosen by the client
+        user.setRole(User.Role.STUDENT);
+        // New accounts cannot log in until they open the link sent by email (US-AUT-07)
+        user.setEmailVerified(false);
     }
 
     @HandleBeforeSave
@@ -70,6 +93,7 @@ public class UserEventHandler {
         logger.info("After creating: {}", user.toString());
         user.encodePassword();
         userRepository.save(user);
+        emailVerificationService.sendVerification(user);
     }
 
     @HandleAfterSave

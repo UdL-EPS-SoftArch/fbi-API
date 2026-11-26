@@ -9,6 +9,24 @@ spring:
       hibernate:
         auto_quote_keyword: true # Columns like "year" or "rank" are SQL reserved words
 
+# Rate limits (US-SEC-02). Override any value with its environment variable,
+# e.g. `fly secrets set RATE_LIMIT_PUBLIC=200`, without rebuilding the app.
+rate-limit:
+  rules:
+    public:       { limit: "${RATE_LIMIT_PUBLIC:120}",       window-seconds: "${RATE_LIMIT_PUBLIC_WINDOW:60}" }
+    registration: { limit: "${RATE_LIMIT_REGISTRATION:5}",   window-seconds: "${RATE_LIMIT_REGISTRATION_WINDOW:3600}" }
+    recovery:     { limit: "${RATE_LIMIT_RECOVERY:10}",      window-seconds: "${RATE_LIMIT_RECOVERY_WINDOW:900}" }
+    reports:      { limit: "${RATE_LIMIT_REPORTS:10}",       window-seconds: "${RATE_LIMIT_REPORTS_WINDOW:3600}" }
+    verification: { limit: "${RATE_LIMIT_VERIFICATION:10}",  window-seconds: "${RATE_LIMIT_VERIFICATION_WINDOW:900}" }
+    verification-email: { limit: "${RATE_LIMIT_VERIFICATION_EMAIL:5}", window-seconds: "${RATE_LIMIT_VERIFICATION_EMAIL_WINDOW:900}" }
+
+# Email verification (US-AUT-07): link to the frontend page and daily deletion (3:00) of
+# accounts still unverified after 7 days
+email-verification:
+  frontend-url: ${EMAIL_VERIFICATION_FRONTEND_URL:http://localhost:3000/verify-email}
+  from: ${EMAIL_VERIFICATION_FROM:no-reply@localhost}
+  cleanup-cron: ${EMAIL_VERIFICATION_CLEANUP_CRON:0 0 3 * * *}
+
 password-reset:
   frontend-url: ${PASSWORD_RESET_FRONTEND_URL:http://localhost:3000/reset-password}
   from: ${PASSWORD_RESET_FROM:no-reply@localhost}

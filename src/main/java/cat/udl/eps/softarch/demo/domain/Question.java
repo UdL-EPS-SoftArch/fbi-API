@@ -52,6 +52,12 @@ public class Question extends UriEntity<Long> {
     @PositiveOrZero
     private Integer score = 1;
 
+    /** US-EST-19: a question worth 0 points is shown as "not scored". Derived, not stored. */
+    @JsonProperty(value = "scored", access = JsonProperty.Access.READ_ONLY)
+    public boolean isScored() {
+        return score != null && score > 0;
+    }
+
     @CreatedDate
     @DateTimeFormat
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

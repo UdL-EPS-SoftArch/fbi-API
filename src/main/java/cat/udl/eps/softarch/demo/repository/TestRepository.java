@@ -32,8 +32,11 @@ public interface TestRepository extends CrudRepository<Test, Long>, PagingAndSor
     @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE " + VISIBILITY_CLAUSE)
     Page<Test> findAll(Pageable pageable);
 
+    // Direct link (US-COM-05, US-EST-38): a privately published test is also shown to any logged-in
+    // user who opens it by id, but it is never listed (only findById uses this extra condition)
     @Override
-    @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE t.id = :id AND (" + VISIBILITY_CLAUSE + ")")
+    @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE t.id = :id AND (" + VISIBILITY_CLAUSE +
+           " OR (t.status = 'PUBLISHED' AND ?#{isAuthenticated()} = true))")
     Optional<Test> findById(@Param("id") Long id);
 
     @Query("SELECT t FROM Test t LEFT JOIN t.author author WHERE t.author = :user AND (" + VISIBILITY_CLAUSE + ")")

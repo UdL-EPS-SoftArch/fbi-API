@@ -62,6 +62,22 @@ Feature: View a subject leaderboard through the API
       | ztie     | 2    | 80    |
       | test     | 3    | 80    |
 
+  @US-COM-11
+  Scenario: Withdrawing an official test removes its scores and republishing restores them
+    Given I login as "admin" with password "password"
+    When the administrator sets the official subject test to "WITHDRAWN"
+    Then The response code is 200
+    When I request subject leaderboard page 0 of size 10
+    Then the subject leaderboard total is 0
+    When the administrator sets the official subject test to "PUBLISHED"
+    Then The response code is 200
+    When I request subject leaderboard page 0 of size 10
+    Then the subject leaderboard page contains
+      | username | rank | score |
+      | demo     | 1    | 100   |
+      | test     | 2    | 80    |
+      | ztie     | 2    | 80    |
+
   Scenario: A subject without results has an empty leaderboard
     Given I'm not logged in
     When I request the empty subject leaderboard

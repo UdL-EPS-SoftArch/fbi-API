@@ -18,6 +18,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import tools.jackson.databind.JsonNode;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 
 public class SubjectLeaderboardStepDefs {
     private final StepDefs steps;
@@ -31,9 +32,17 @@ public class SubjectLeaderboardStepDefs {
     private final List<TestAttempt> results = new ArrayList<>();
     private Subject subject, empty, other;
     private User tie, student;
+    private Test official;
+    private Question question;
+    private final List<AnswerOption> options = new ArrayList<>();
+    private final QuestionRepository questions;
+    private final AnswerOptionRepository answerOptions;
 
     public SubjectLeaderboardStepDefs(StepDefs steps, SubjectRepository subjects, TestRepository tests,
-            TestAttemptRepository attempts, UserRepository users, LeaderboardRepository entries, LeaderboardService rankings) {
+            TestAttemptRepository attempts, UserRepository users, LeaderboardRepository entries, LeaderboardService rankings,
+            QuestionRepository questions, AnswerOptionRepository answerOptions) {
+        this.questions = questions;
+        this.answerOptions = answerOptions;
         this.steps = steps;
         this.subjects = subjects;
         this.tests = tests;
@@ -61,7 +70,7 @@ public class SubjectLeaderboardStepDefs {
         student.encodePassword();
         student = users.save(student);
         User admin = users.findByUsername("admin").orElseThrow();
-        Test official = test(subject, "Official", Test.TestType.OFFICIAL, Test.Status.PUBLISHED);
+        official = test(subject, "Official", Test.TestType.OFFICIAL, Test.Status.PUBLISHED);
         result(official, demo, 100);
         result(official, student, 80);
         result(official, tie, 80);
@@ -144,6 +153,15 @@ public class SubjectLeaderboardStepDefs {
             if (entry.getSubject() != null && (entry.getSubject().getId().equals(subject.getId()) || entry.getSubject().getId().equals(other.getId()))) entries.delete(entry);
             else if (entry.getUser().getId().equals(tie.getId()) || entry.getUser().getId().equals(student.getId())) entries.delete(entry);
         }
+        answerOptions.deleteAll(options);
+        if (question != null) {
+            questions.delete(question);
+            // The status was changed through the API: delete the current version, not the stale one
+            fixtures.replaceAll(test -> test.getId().equals(official.getId())
+                    ? tests.findByTitle(test.getTitle()).stream()
+                            .filter(stored -> stored.getId().equals(test.getId())).findFirst().orElseThrow()
+                    : test);
+        }
         attempts.deleteAllById(results.stream().map(TestAttempt::getId).toList());
         tests.deleteAll(fixtures);
         users.delete(tie);
@@ -174,6 +192,32 @@ public class SubjectLeaderboardStepDefs {
                 .queryParam("projection", "leaderboardSummary").queryParam("page", page).queryParam("size", size)
                 .build().toUriString();
         getUri(uri);
+    }
+
+    // US-COM-11: through the API, so the test handler recalculates the rankings. The fixture gets a
+    // valid question first, because republishing runs the publication checks.
+    @When("the administrator sets the official subject test to {string}")
+    public void setOfficialStatus(String status) throws Exception {
+        if (question == null) {
+            question = new Question();
+            question.setTest(official);
+            question.setQuestionText("Eligible question");
+            question.setOrderIndex(0);
+            question = questions.save(question);
+            for (int i = 0; i < 2; i++) {
+                AnswerOption option = new AnswerOption();
+                option.setQuestion(question);
+                option.setOptionText("Option " + i);
+                option.setIsCorrect(i == 0);
+                option.setOrderIndex(i);
+                options.add(answerOptions.save(option));
+            }
+        }
+        steps.result = steps.mockMvc.perform(patch(official.getUri())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"" + status + "\"}")
+                .accept(MediaType.APPLICATION_JSON)
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @When("I request subject leaderboard page {int} of size {int}")

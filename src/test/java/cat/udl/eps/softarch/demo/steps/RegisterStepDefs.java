@@ -92,7 +92,7 @@ public class RegisterStepDefs {
     assertEquals(User.Role.valueOf(role), user.getRole());
   }
 
-  private void register(String username, String email, String password, JSONObject extraFields) throws Throwable {
+  void register(String username, String email, String password, JSONObject extraFields) throws Throwable {
     User user = new User();
     user.setUsername(username);
     user.setEmail(email);

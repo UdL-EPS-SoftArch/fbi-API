@@ -18,6 +18,7 @@ Feature: Return to the previous point after authentication
   Scenario: Registering from a restricted action returns there after verifying and logging in
     Given I'm not logged in
     When I register a new user with username "newuser", email "newuser@sample.app" and password "password" returning to the detail page of the test "Databases exam"
+    And A verification link is sent to "newuser@sample.app"
     And I open the emailed verification link
     And I start a session with "newuser@sample.app" and password "password"
     Then The response code is 201

@@ -70,6 +70,13 @@ public class ExploreCatalogStepDefs {
             if (row.get("year") != null) {
                 test.setYear(Integer.parseInt(row.get("year")));
             }
+            // Optional columns (US-COM-05): difficulty and comma-separated tags
+            if (row.get("difficulty") != null) {
+                test.setDifficulty(Test.Difficulty.valueOf(row.get("difficulty")));
+            }
+            if (row.get("tags") != null) {
+                test.setTags(Arrays.asList(row.get("tags").split(",")));
+            }
             test = testRepository.save(test);
             for (int i = 1; i <= Integer.parseInt(row.get("questions")); i++) {
                 Question question = new Question();

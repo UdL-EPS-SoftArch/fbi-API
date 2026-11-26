@@ -3,6 +3,7 @@ package cat.udl.eps.softarch.demo.handler;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
 import cat.udl.eps.softarch.demo.service.EmailVerificationService;
+import cat.udl.eps.softarch.demo.service.ReturnAddressService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.rest.core.annotation.HandleAfterCreate;
@@ -59,6 +60,11 @@ public class UserEventHandler {
         user.setEmailVerified(false);
         user.setShowFullName(false);
         user.setShowEmail(false);
+
+        // Only internal addresses are kept, so the first login cannot send anyone outside (US-AUT-05)
+        if (!ReturnAddressService.isInternal(user.getReturnTo())) {
+            user.setReturnTo(null);
+        }
     }
 
     @HandleBeforeSave

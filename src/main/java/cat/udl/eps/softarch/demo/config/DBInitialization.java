@@ -1,6 +1,8 @@
 package cat.udl.eps.softarch.demo.config;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
+import cat.udl.eps.softarch.demo.domain.LeaderboardPeriod;
+import cat.udl.eps.softarch.demo.repository.LeaderboardPeriodRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import jakarta.annotation.PostConstruct;
@@ -16,13 +18,19 @@ public class DBInitialization {
     private String activeProfiles;
 
     private final UserRepository userRepository;
+    private final LeaderboardPeriodRepository periods;
 
-    public DBInitialization(UserRepository userRepository) {
+    public DBInitialization(UserRepository userRepository, LeaderboardPeriodRepository periods) {
         this.userRepository = userRepository;
+        this.periods = periods;
     }
 
     @PostConstruct
     public void initializeDatabase() {
+        if (periods.findByEndsAtIsNull().isEmpty()) {
+            LeaderboardPeriod period = new LeaderboardPeriod();
+            periods.save(period);
+        }
         // Default user
         if (!userRepository.existsByUsername("demo")) {
             User user = new User();

@@ -8,9 +8,8 @@ import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
 
 /**
- * Serializes a private profile field (email, full name, birth date, role...) only when the
- * viewer is the owner of the profile or an administrator; anyone else receives null (2.4.7).
- * Until persistent privacy preferences exist, these fields are never public.
+ * Shows private fields to their owner and administrators. Optional details can also be
+ * shown on public profiles when the owner enables their individual visibility settings.
  */
 public class PrivateProfileFieldSerializer extends ValueSerializer<Object> {
 
@@ -20,10 +19,29 @@ public class PrivateProfileFieldSerializer extends ValueSerializer<Object> {
         // REST (HAL) responses, the EntityModel that wraps it
         Object current = gen.currentValue();
         Object profile = current instanceof EntityModel<?> model ? model.getContent() : current;
-        if (canSeePrivateFields(profile)) {
+        if (canSeePrivateFields(profile) || (profile instanceof User user
+                && user.isProfilePublic() && isPublicField(user))) {
             ctxt.writeValue(gen, value);
         } else {
             gen.writeNull();
+        }
+    }
+
+    protected boolean isPublicField(User profile) {
+        return false;
+    }
+
+    public static class FullName extends PrivateProfileFieldSerializer {
+        @Override
+        protected boolean isPublicField(User profile) {
+            return profile.getShowFullName();
+        }
+    }
+
+    public static class Email extends PrivateProfileFieldSerializer {
+        @Override
+        protected boolean isPublicField(User profile) {
+            return profile.getShowEmail();
         }
     }
 
